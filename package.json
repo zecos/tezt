@@ -1,9 +1,9 @@
 {
-  "name": "tezt",
-  "version": "1.1.0",
+  "name": "@zecos/tezt",
+  "version": "0.0.1",
   "author": "Zane Hitchcox",
   "description": "Minimalist testing library",
-  "repository": "https://github.com/zwhitchcox/tezt.git",
+  "repository": "https://github.com/zecos/tezt.git",
   "main": "dist/tezt.singleton.js",
   "bin": {
     "tezt": "dist/cli.js"

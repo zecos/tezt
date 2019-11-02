@@ -178,3 +178,8 @@ not saying everyone will necessarily want to use this, but maybe it will make it
 
 [jest](https://jestjs.io)
 [mocha](https://mochajs.org)
+
+
+### TODO
+
+* add snapshotting
