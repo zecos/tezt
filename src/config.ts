@@ -5,9 +5,10 @@ export async function getConfig() {
   const root = await getProjectRoot()
   const userConfig = await getUserConfig(root)
   const defaultConfig = {
-    testPatterns: ["**/*.test.js"],
-    ignorePatterns: ["node_modules/**", "**/.*"],
-    watchPatterns: ["**/*.{ts,js}"],
+    testPatterns: '**/*.test.{js,ts}',
+    ignorePatterns: ['node_modules/**', '**/.*', 'dist/**', 'build/**'],
+    watchPatterns: ['**/*.{ts,js}'],
+    testPaths: [process.cwd()],
     root,
   }
   const commandLineConfig =  await parseCommandLineArgs()
@@ -23,35 +24,45 @@ export async function getConfig() {
 
 async function parseCommandLineArgs() {
   const config:any = {}
+  const seen:any = {}
   const args = process.argv.slice(2)
+  const testPaths: string[] = []
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]
-    const nextArg = args[i+1]
     if (['-w', '--watch'].includes(arg)) {
       config.watch = true
-    }
-    if (['--root', '-r'].includes(arg)) {
+    } else if (['--root', '-r'].includes(arg)) {
       const root = args[i+1]
       config.root = root
       if (!await fs.exists(root)) {
         throw new Error('Could not find root ' + root)
       }
-    }
-    if (['--testPatterns', '-t'].includes(arg)) {
-      while(!nextArg && nextArg.startsWith('-')) {
-        config.testPatterns = [].concat(args[++i])
+    } else if (['--test-patterns', '-t'].includes(arg)) {
+      while(!args[i+1].startsWith('-')) {
+        config.testPatterns = args[++i]
       }
-    }
-    if (['--ignorePatterns', '-i'].includes(arg)) {
-      while(!nextArg && nextArg.startsWith('-')) {
-        config.ignorePatterns = [].concat(args[++i])
+    } else if (['--ignore-patterns', '-i'].includes(arg)) {
+      while(args[i+1] && !args[i+1].startsWith('-')) {
+        if (!seen.ignorePatterns) {
+          seen.ignorePatterns = true
+          config.ignorePatterns = []
+        }
+        config.ignorePatterns.push(args[++i])
       }
-    }
-    if (['--watchPatterns', '--wp'].includes(arg)) {
-      while(!nextArg && nextArg.startsWith('-')) {
+    } else if (['--watch-patterns', '--wp'].includes(arg)) {
+      while(args[i+1] && !args[i+1].startsWith('-')) {
+        if (!seen.watchPatterns) {
+          seen.watchPatterns = true
+          config.watchPatterns = []
+        }
         config.watchPatterns = [].concat(args[++i])
       }
+    } else {
+      testPaths.push(arg)
     }
+  }
+  if (testPaths.length) {
+    config.testPaths = testPaths
   }
   return config
 }

@@ -438,7 +438,7 @@ export function getLocation(matchLine): ILocation {
   const lines = stack
     .split('\n')
   const lineindex = lines.findIndex(line => matchLine.test(line))
-  const fileline = lines[lineindex + 1]
+  const fileline = lines[lineindex + process.env.TEZT === "cli" ? 2 : 1]
   const [_, filepath, lineno] = /.*\s\(?([^:]+):(\d+):\d+\)?$/.exec(fileline)
   return {
     filepath,

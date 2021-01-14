@@ -99,7 +99,7 @@ describe.only('hellohello', () => {
 })
 
 test('I can also run asynchonous tests', async () => {
-  await new Promise((res, rej) => {
+  await new Promise<void>((res, rej) => {
     expect('the test will not return until the promise has resolved').toBeTruthy()
     res()
   })

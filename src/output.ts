@@ -12,8 +12,7 @@ export function outputResults (stats) {
   const passedMsg = chalk.green(`${passed.length} passed`)
   const totalMsg = `${totalTests} total`
   console.log()
-  console.log(`Tests: ${failedMsg}, ${skippedMsg}, ${passedMsg}, ${totalMsg}`)
-  console.log(`Total: ${totalRun}`)
+  console.log(`Tests: ${failedMsg}, ${skippedMsg}, ${passedMsg}, ${totalMsg}, ${totalRun} run`)
   failed.forEach(stats => {
     const {location, name} = stats.item
     const relativepath = path.relative(process.cwd(), location.filepath)

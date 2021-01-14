@@ -5,6 +5,7 @@
     "outDir": "dist",
     "sourceMap": true,
     "noEmitOnError": false,
+    "declaration": true,
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
@@ -13,12 +14,10 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
   },
-  "files": [
-    "tezt.singleton.ts",
-    "cli.ts",
-    "RunCallbacks.ts",
-  ],
   "include": [
-    "**/*.test.ts"
+    "src",
   ],
+  "ignore": [
+    "dist",
+  ]
 }

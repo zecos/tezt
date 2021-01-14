@@ -4,9 +4,11 @@ import chalk from 'chalk';
 import glob from 'glob-promise'
 import chokidar from 'chokidar'
 import uuid from 'uuid/v4'
+import fs from 'fs-extra'
 import { Tezt } from './Tezt';
 import {getConfig} from './config'
 import { outputResults } from './output';
+import path from 'path'
 import ('source-map-support/register')
 
 process.env.TEZT = "cli"
@@ -40,11 +42,35 @@ async function main() {
 async function runTests(config) {
   const allTestFiles = await getAllTestFiles(config)
   const requireKeep = Object.keys(require.cache)
+  const compositeStats: any[] = []
   for (const file of allTestFiles) {
     await import('source-map-support/register')
-    await import(config.root + "/" + file)
+    await import('ts-node/register')
+    console.log()
+    console.log(chalk.bold(`File: ${file}`))
+    await import(path.resolve(process.cwd(), file))
     const stats = await (global as any).$$tezt.run()
+    compositeStats.push(stats)
     outputResults(stats)
+  }
+  if (allTestFiles.length > 1) {
+    const results = {
+      failed: 0,
+      skipped: 0,
+      passed: 0,
+    }
+    for (const stats of compositeStats) {
+      results.failed += stats.failed.length
+      results.skipped += stats.skipped.length
+      results.passed += stats.passed.length
+    }
+    const totalTests = results.passed + results.failed + results.skipped
+    const failedMsg = chalk.red(`${results.failed} failed`)
+    const skippedMsg = chalk.yellow(`${results.skipped} skipped`)
+    const passedMsg = chalk.green(`${results.passed} passed`)
+    const totalMsg = `${totalTests} total`
+    console.log()
+    console.log(`Composite Results: ${failedMsg}, ${skippedMsg}, ${passedMsg}, ${totalMsg}`)
   }
   reset()
   function reset() {
@@ -64,11 +90,26 @@ function resetRequire(requireKeep) {
 }
 
 async function getAllTestFiles(config) {
-  const files = await glob(config.testPatterns[0], {
-    root: config.root,
-    ignore: config.ignorePatterns,
-  })
-
+  let files: string[] = []
+  for (const testPath of config.testPaths) {
+    if (!fs.existsSync(testPath)) {
+      console.error(`Could not find ${testPath}`)
+      process.exit(1)
+    }
+    const stats  = await fs.lstat(testPath)
+    if (stats.isFile()) {
+      files.push(testPath)
+      continue
+    }
+    const globFiles = await glob(config.testPatterns, {
+      cwd: testPath,
+      root: config.root || process.cwd(),
+      ignore: config.ignorePatterns,
+    })
+    files = files.concat(globFiles.map(file => (
+      path.relative(process.cwd(), path.resolve(testPath, file))
+    )))
+  }
   return files
 }
 
