@@ -1,7 +1,5 @@
 import expect from 'expect'
-import EventEmitter from 'events'
 import { test, describe, before, after, afterEach, beforeEach, only } from './tezt.singleton'
-import ('source-map-support/register')
 
 before(() => {
   console.log('this is run before all')
@@ -92,8 +90,8 @@ describe.only('hellohello', () => {
     })
     describe('myonly', () => {
       test('hello', ()=>{})
-      // test('new test', () =>{})
-      // test('will be run (unless there\'s another only in the describe', () => {})
+      test('new test', () =>{})
+      test('will be run (unless there\'s another only in the describe', () => {})
     })
   })
 })

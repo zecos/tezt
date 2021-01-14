@@ -35,13 +35,13 @@ function outputContent(stats) {
   const {depth} = stats
   logoutputs(stats.beforeOutput, depth)
   for (const itemStats of stats.children) {
-    if (itemStats instanceof BlockStats) {
+    if (itemStats.type === "block") {
       const indentation = "  ".repeat(depth)
       console.log(`${indentation}# ${itemStats.name}`)
       outputContent(itemStats)
-    } else if (itemStats instanceof TestStats) {
-      const {item, status} = itemStats
-      const {depth, name} = item
+    } else if (itemStats.type === "test") {
+      const {item, status, depth} = itemStats
+      const {name} = item
       const precursor = precursors[status]
       const indentation = "  ".repeat(depth)
       const { location } = itemStats.item
@@ -64,15 +64,13 @@ function logoutputs(outputs, depth) {
     const { location, type, message } = output
     const relativepath = path.relative(process.cwd(), location.filepath)
     const locationinfo = `  (./${relativepath}:${location.lineno})`
-    const _output = `${indentation}${message.join(" ")}${locationinfo}`
+    const formattedOutput = `${indentation}${message.join(" ")}${locationinfo}`
     if (type === ConsoleOutputType.Warn) {
-      console.log(chalk.yellow.dim(_output))
+      console.log(chalk.yellow.dim(formattedOutput))
     } else if (output.type === ConsoleOutputType.Error) {
-      const output = indentation + message.join(" ")
-      console.log(chalk.red.dim(_output))
+      console.log(chalk.red.dim(formattedOutput))
     } else if (output.type === ConsoleOutputType.Log) {
-      const output = indentation + message.join(" ")
-      console.log(chalk.dim(_output))
+      console.log(chalk.dim(formattedOutput))
     }
   }
 }

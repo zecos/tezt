@@ -1,6 +1,11 @@
 import uuid from 'uuid/v4'
 import { RunCallbacks, IRunCallbacks } from './RunCallbacks';
 
+const actualLog = console.log
+let runMaybe = () => {
+  actualLog(maybeLog)
+}
+let maybeLog:any = ''
 
 export type TVoidFunc = () => void
 export interface IBlock {
@@ -36,7 +41,13 @@ export class Item implements IItem {
   constructor(public name) {}
   id = new uuid()
   location = (() => {
-    return getLocation(/tezt\.singleton\.ts/)
+    const location = getLocation(/tezt\.singleton\.(t|j)s/, true)
+    if (location.lineno === '40' || location.lineno === '30') {
+      actualLog(location)
+      actualLog(this.name)
+      actualLog(maybeLog)
+    }
+    return location
   })()
   skip = false
   only = false
@@ -164,11 +175,11 @@ export class Tezt extends Block implements ITezt {
   }
 
   public only = () => {
-    this.onlyLocations.push(getLocation(new RegExp("")))
+    this.onlyLocations.push(new RegExp(""))
   }
 
   public skip = () => {
-    this.skipLocations.push(getLocation(new RegExp("")))
+    this.skipLocations.push(new RegExp(""))
   }
 
   public before     = fn => this.curBlock.befores.push(fn)
@@ -205,6 +216,8 @@ export interface ITestStats {
   time: number
   error?: Error
   item: IItem
+  depth?: number
+  type: string
 }
 
 export class TestStats {
@@ -214,6 +227,8 @@ export class TestStats {
   status = TestStatus.NotRun
   time = 0
   error = null
+  depth = 0
+  type = "test"
   constructor(public item){}
 }
 
@@ -242,6 +257,7 @@ export interface IBlockStats {
   afterOutput: IConsoleOutput[]
   wasRun: boolean
   output: IConsoleOutput[]
+  type: string
 }
 
 export class BlockStats implements IBlockStats {
@@ -255,6 +271,7 @@ export class BlockStats implements IBlockStats {
   output = []
   skipped = []
   wasRun = false
+  type = "block"
   constructor(public block, public depth, public name){}
 }
 
@@ -310,6 +327,7 @@ export async function run(block: IBlock, inskip = false, depth = 0, options = ne
         stats.children.push(itemStats)
       } else if (item instanceof Test) {
         const testStats = new TestStats(item)
+        testStats.depth = depth
         if (callbacks.beforeTest) {"./"
           callbacks.beforeTest(item, depth)
         }
@@ -432,14 +450,19 @@ function monkeyPatchConsole(options) {
   }
 }
 
-export function getLocation(matchLine): ILocation {
+export function getLocation(matchLine, last=false): ILocation {
   require('source-map-support/register')
   const {stack} = new Error()
   const lines = stack
     .split('\n')
-  const lineindex = lines.findIndex(line => matchLine.test(line))
-  const fileline = lines[lineindex + process.env.TEZT === "cli" ? 2 : 1]
-  const [_, filepath, lineno] = /.*\s\(?([^:]+):(\d+):\d+\)?$/.exec(fileline)
+  if (last) {
+    maybeLog = lines
+  }
+
+  const lineIndex = lines.findIndex(line => matchLine.test(line))
+
+  const fileLine = lines[lineIndex + 1]
+  const [_, filepath, lineno] = /.*\s\(?([^:]+):(\d+):\d+\)?$/.exec(fileLine)
   return {
     filepath,
     lineno,
