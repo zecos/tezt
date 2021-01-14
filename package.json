@@ -9,7 +9,8 @@
     "tezt": "dist/cli.js"
   },
   "scripts": {
-    "test": "node dist/cli.js -i 'dist/**' 'node_modules/**'"
+    "test": "node dist/cli.js -i 'dist/**' 'node_modules/**'",
+    "prepublish": "tsc"
   },
   "license": "MIT",
   "dependencies": {
