@@ -15,7 +15,6 @@ async function main() {
     console.error('You must run this from within a node project (with a package.json)')
     process.exit(1)
   }
-  console.log('root', config.root)
   if (!fs.existsSync(config.root)) {
     console.error(`Project root, ${config.root}, does not exist.`)
     process.exit(1)
