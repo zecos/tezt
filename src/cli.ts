@@ -3,7 +3,6 @@
 import chalk from 'chalk';
 import glob from 'glob-promise'
 import chokidar from 'chokidar'
-import uuid from 'uuid/v4'
 import fs from 'fs-extra'
 import { Tezt } from './Tezt';
 import {getConfig} from './config'
@@ -40,6 +39,32 @@ async function main() {
 }
 
 async function runTests(config) {
+  if (!config.root) {
+    console.error('You must run this from within a node project (with a package.json)')
+    process.exit(1)
+  }
+  if (!fs.existsSync(config.root)) {
+    console.error(`Project root, ${config.root}, does not exist.`)
+    process.exit(1)
+  }
+  if (!fs.existsSync(path.resolve(config.root, 'package.json'))) {
+    console.warn(`package.json not found in ${config.root}`)
+  }
+  if (!fs.existsSync(path.resolve(config.root, 'node_modules', 'tezt'))) {
+    console.error(`Local tezt package not found. Please install:`)
+    let yarnCwdArg = ''
+    if (config.root !== process.cwd()) {
+      yarnCwdArg = '--cwd ' + config.root
+    }
+    console.log(`yarn add ${yarnCwdArg} --dev tezt`)
+    console.log('or')
+    if (config.root !== process.cwd()) {
+      console.log(`(cd ${config.root} && npm install --save-dev tezt)`)
+    } else {
+      console.log(`npm install --save-dev tezt`)
+    }
+  }
+
   const allTestFiles = await getAllTestFiles(config)
   const requireKeep = Object.keys(require.cache)
   const compositeStats: any[] = []

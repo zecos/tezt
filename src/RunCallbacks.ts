@@ -1,6 +1,5 @@
 import chalk from "chalk";
-import {TVoidFunc, TestStatus} from './Tezt'
-import { Stats } from "fs";
+import {TestStatus} from './Tezt'
 
 export interface IRunCallbacks {
   before: (block, skip, depth) => void

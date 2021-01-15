@@ -40,15 +40,9 @@ export interface IItem {
 export class Item implements IItem {
   constructor(public name) {}
   id = new uuid()
-  location = (() => {
-    const location = getLocation(/tezt\.singleton\.(t|j)s/, true)
-    if (location.lineno === '40' || location.lineno === '30') {
-      actualLog(location)
-      actualLog(this.name)
-      actualLog(maybeLog)
-    }
-    return location
-  })()
+  location = (() => (
+    getLocation(/tezt\.singleton\.(t|j)s/, true)
+  ))()
   skip = false
   only = false
 }

@@ -6,7 +6,7 @@
   "repository": "https://github.com/zecos/tezt.git",
   "main": "dist/tezt.singleton.js",
   "bin": {
-    "tezt": "dist/cli.js"
+    "tezt": "dist/cli-global.js"
   },
   "scripts": {
     "test": "node dist/cli.js -i 'dist/**' 'node_modules/**'",

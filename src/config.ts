@@ -3,7 +3,8 @@ import path from 'path'
 
 export async function getConfig() {
   const root = await getProjectRoot()
-  const userConfig = await getUserConfig(root)
+  const commandLineConfig =  await parseCommandLineArgs()
+  const userConfig = await getUserConfig(commandLineConfig.root || root)
   const defaultConfig = {
     testPatterns: '**/*.test.{js,ts}',
     ignorePatterns: ['node_modules/**', '**/.*', 'dist/**', 'build/**'],
@@ -11,12 +12,11 @@ export async function getConfig() {
     testPaths: [process.cwd()],
     root,
   }
-  const commandLineConfig =  await parseCommandLineArgs()
 
   const config =  {
     ...defaultConfig,
     ...userConfig,
-    ...commandLineConfig
+    ...commandLineConfig,
   }
 
   return config
@@ -69,7 +69,6 @@ async function parseCommandLineArgs() {
 
 async function getUserConfig(root) {
   if (!root) {
-    console.warn('no project root found')
     root = process.cwd()
   }
   const teztConfigPath = path.join(root, 'tezt.config.js')
