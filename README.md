@@ -12,6 +12,35 @@ The advantages of this library are:
 * Compatible with jest and mocha (although not all features are implemented yet)
 * You can run a test file as you would a normal file
 
+#### Installation
+
+In your project:
+
+```
+yarn add --dev tezt
+```
+
+or
+
+```
+npm i --save-dev
+```
+
+Additionally, for command line use (which you probably want):
+
+```
+yarn global add tezt
+```
+
+or
+
+```
+npm i -g tezt
+```
+
+You need `tezt` installed globally for it to work locally.
+
+
 #### Writing test files
 
 Implementation is as easy as importing your module, declaring your tests, and running that file.
