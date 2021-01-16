@@ -17,7 +17,7 @@ async function main() {
     process.exit()
   }
   if (process.argv.includes("--help") || process.argv.includes("-h")) {
-    const readMePath = path.resolve(__dirname, '..', 'README.md')
+    const readMePath = path.resolve(__dirname, '..', '..', 'README.md')
     const str = (await fs.readFile(readMePath)).toString()
     const md = renderString(str)
     console.log(md)
