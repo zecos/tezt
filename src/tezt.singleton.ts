@@ -43,8 +43,13 @@ export const afterEach = _global.afterEach || ((...args) => tezt.afterEach(...ar
 export const afterAll = _global.afterAll || ((...args) => tezt.afterAll(...args))
 export const globalAfterAll = fn => _global.globalAfterAlls.push(fn)
 
-export const only = IN_OTHER ? () => {} : ((...args) => tezt.only(...args))
-export const skip = IN_OTHER ? () => {} : (...args) => tezt.skip(...args)
+const actualLog = console.log
+export const only = () => {
+  ;(_global.only || (() => {}))()
+}
+export const skip = () => {
+  ;(_global.skip || (() => {}))()
+}
 
 let hasRun = false
 process.on('beforeExit', async () => {

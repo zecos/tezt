@@ -8,10 +8,13 @@ import {getConfig} from './config'
 import { reset as singletonReset } from './tezt.singleton'
 import { outputCompositeResults, outputResults } from './output';
 import path from 'path'
-import ('source-map-support/register')
+import 'source-map-support/register'
+import 'ts-node/register'
 
 process.env.TEZT = "cli"
 process.env.FORCE_COLOR = process.env.FORCE_COLOR || "1"
+let onlyFiles: string[] = []
+let skipFiles: string[] = []
 const globalAny: any = global as any
 async function main() {
   const config = await getConfig()
@@ -72,17 +75,19 @@ async function runTests(config) {
   }
 
   const allTestFiles = await getAllTestFiles(config)
-  console.log(config)
-  console.log({allTestFiles})
   const requireKeep = Object.keys(require.cache)
 
   const tezts: any[] = []
   globalAny.globalAfterAlls = []
   globalAny.globalBeforeAlls = []
   for (const file of allTestFiles) {
+    globalAny.only = () => {
+      onlyFiles.push(file)
+    }
+    globalAny.skip = () => {
+      skipFiles.push(file)
+    }
     singletonReset()
-    await import('source-map-support/register')
-    await import('ts-node/register')
     globalAny.$$tezt.file = file
     await import(path.resolve(process.cwd(), file))
     tezts.push(globalAny.$$tezt)
@@ -93,7 +98,19 @@ async function runTests(config) {
     await fn()
   }
   for (const tezt of tezts) {
-    console.log(chalk.bold(`File: ${tezt.file}`))
+    if (skipFiles.includes(tezt.file)) {
+      console.log(`Skipping: ${tezt.file}`)
+      continue
+    }
+    let isOnly = false
+    if (onlyFiles.length) {
+      if (!onlyFiles.includes(tezt.file)) {
+        console.log(` ${tezt.file}`)
+        continue
+      }
+      isOnly = true
+    }
+    console.log(chalk.bold(`File${isOnly ? " (Only)" : ""}: ${tezt.file}`))
     const stats = await tezt.run()
     outputResults(stats)
     compositeStats.push(stats)
@@ -102,18 +119,20 @@ async function runTests(config) {
   for (const fn of globalAny.globalAfterAlls) {
     await fn()
   }
-
-  if (allTestFiles.length > 1) {
+  const actualLength = onlyFiles.length || (allTestFiles.length - skipFiles.length)
+  if (actualLength > 1) {
     outputCompositeResults(compositeStats)
   }
-  reset()
-  function reset() {
-    singletonReset()
-    if(config.watch) {
-      resetRequire(requireKeep)
-    }
+
+  // reset
+  onlyFiles = []
+  skipFiles = []
+  singletonReset()
+  if(config.watch) {
+    resetRequire(requireKeep)
   }
 }
+
 
 function resetRequire(requireKeep) {
   for (const key in require.cache) {
@@ -140,7 +159,6 @@ async function getAllTestFiles(config) {
       root: config.root || process.cwd(),
       ignore: config.ignorePatterns,
     })
-    console.log({globFiles, testPath, root: config.root, patt: config.testPatterns, ignore: config.ignorePatterns})
     files = files.concat(globFiles.map(file => (
       path.relative(process.cwd(), path.resolve(testPath, file))
     )))
