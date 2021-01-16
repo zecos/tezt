@@ -1,10 +1,21 @@
-This is a minimalistic testing library that doesn't usurp control of your node process. This makes it easy to run with VS Code's debugger or with you can listen with Chrome's debugger as well.
+## Tezt
 
-The tests can also be run with Mocha or Jest without making any changes to your code, so you get the best of both worlds.
+***This is a work in process...it's all right, but it's not really ready for production use, and there are probably a lot of bugs..and I'm not sure how long it will take me to fix reported issues/add features***
+
+This is a minimalistic testing library that doesn't usurp control of your node process.
+
+The advantages of this library are:
+
+* Works out of the box with typescript or javascript files
+* Easy to use with VS Code or Google Chrome's debugger
+* Source map lines don't get messed up
+* Compatible with jest and mocha (although not all features are implemented yet)
+* You can run a test file as you would a normal file
+
+#### Writing test files
 
 Implementation is as easy as importing your module, declaring your tests, and running that file.
 
-Like so:
 
 ```ts
 import expect from 'expect'
@@ -70,6 +81,88 @@ test('I can also run asynchonous tests', async () => {
     res()
   })
 })
+```
+
+#### Running tests
+
+As stated above, you can simply run the file. If you're using typescript, you would run the test with
+
+```
+ts-node '<yourfilename>'
+```
+
+You can also use the command line tool, which you will have to install with yarn or npm
+
+```
+yarn global add tezt
+npm i -g tezt
+```
+
+Then you can run that same file with
+
+```
+tezt <yourfilename>
+```
+
+You can also watch that test file, so node will not have to bootload its runtime every time you want to run a test suite.
+
+```
+tezt <yourfilename> -w
+```
+
+You can also run multiple files at the same time:
+
+```
+tezt <yourfilename> <yoursecondfilename>
+```
+
+If a directory is specified, `tezt` will crawl all children of the directory and run all the test files.
+
+```
+tezt <my-dir>
+```
+
+If you don't specify any files or directories, it will default to your cwd:
+
+```
+tezt
+```
+
+You can specify a [glob](https://www.malikbrowne.com/blog/a-beginners-guide-glob-patterns) for the patterns of test files you want to include (`-t` or `--test-patterns`).
+
+```
+tezt --test-patterns '**/*.(test|spec).{js,ts}'
+```
+
+You can also specify patterns to ignore (`--ignore-patterns` or `-i`):
+
+```
+tezt --ignore-patterns 'node_modules/**' '**/.*' 'dist/**' 'build/**'
+```
+
+You can also specify which files you want to trigger a re-test (if using the `--watch` flag) (`--watch-patterns` or `--wp`):
+
+```
+tezt --watch-patterns '**/*.{ts,js}'
+```
+
+You cna also specify a project root if you are not in a directory or subdirectory of your project (`--root` or `-r`):
+
+```
+tezt --root myproj
+```
+
+Finally, you can set these flags programmatically by adding a file named `tezt.config.js` in your root directory and exporting a configuration:
+
+
+```js
+// tezt.config.js
+module.exports = {
+  testPatterns: '**/*.(test|spec).{js,ts}',
+  ignorePatterns: ['node_modules/**', '**/.*', 'dist/**', 'build/**'],
+  watchPatterns: ['**/*.{ts,js}'],
+  testPaths: ['src'],
+}
 ```
 
 ### Use With VS Code

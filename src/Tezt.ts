@@ -1,7 +1,9 @@
 import uuid from 'uuid/v4'
 import { RunCallbacks, IRunCallbacks } from './RunCallbacks';
+import { promisify } from 'util'
 
 const actualLog = console.log
+const actualWarn = console.warn
 let runMaybe = () => {
   actualLog(maybeLog)
 }
@@ -88,6 +90,7 @@ export interface ITezt extends Block {
   onlyLocations: string[]
   inOnly: boolean
   name: string
+  file: string
 }
 
 export class Tezt extends Block implements ITezt {
@@ -99,6 +102,10 @@ export class Tezt extends Block implements ITezt {
   inOnly = false
   containsOnly = false
   name = "tezt"
+  file = (global as any).curFile
+  beforeAlls = []
+  afterAlls = []
+
 
   constructor() {
     super()
@@ -165,7 +172,14 @@ export class Tezt extends Block implements ITezt {
   })()
 
   public run = async () => {
-    return await run(this.curBlock)
+    for (const beforeAll of this.beforeAlls) {
+      await beforeAll()
+    }
+    const results = await run(this.curBlock)
+    for (const afterAll of this.afterAlls) {
+      await afterAll()
+    }
+    return results
   }
 
   public only = () => {
@@ -178,8 +192,10 @@ export class Tezt extends Block implements ITezt {
 
   public before     = fn => this.curBlock.befores.push(fn)
   public beforeEach = fn => this.curBlock.beforeEaches.push(fn)
+  public beforeAll  = fn => this.beforeAlls.push(fn)
   public after      = fn => this.curBlock.afters.push(fn)
   public afterEach  = fn => this.curBlock.afterEaches.push(fn)
+  public afterAll   = fn => this.afterAlls.push(fn)
 }
 
 
@@ -325,6 +341,7 @@ export async function run(block: IBlock, inskip = false, depth = 0, options = ne
         if (callbacks.beforeTest) {"./"
           callbacks.beforeTest(item, depth)
         }
+        let destroy, destroyPromiseMp;
         try {
           stats.children.push(testStats)
           if ((!item.only) && (containsOnly || inskip || item.skip)) {
@@ -337,9 +354,52 @@ export async function run(block: IBlock, inskip = false, depth = 0, options = ne
             await beforeEach()
             destroy()
           }
-          const destroy = mp.setConsoleOutput(testStats.output)
-          await item.fn()
+          destroy = mp.setConsoleOutput(testStats.output)
+          destroyPromiseMp = monkeyPatchPromise()
+
+          const timeoutMsg = `'${item.name}' timed out.`
+          await Promise.race([
+            item.fn(),
+            timeout(3000).then(() => timeoutMsg)
+          ])
+
+          allPromises = []
           destroy()
+          destroyPromiseMp()
+
+          // doesn't work, but need a way to check
+          // for unresolved promises in the future
+
+          // const ap = allPromises
+          // allPromises = []
+          // destroy()
+          // destroyPromiseMp()
+
+          // let timedout = false
+          // const checkProms = proms => {
+          //   if (!timedout) {
+          //     return
+          //   }
+          //   if (proms instanceof Error) {
+          //     return actualWarn(`Unawaited promises errored in '${item.name}'`)
+          //   }
+          //   const unAwaited = proms
+          //     .filter(Boolean)
+          //     .filter(item => item !== timeoutMsg)
+          //   if (unAwaited.length) {
+          //     actualWarn(`Unawaited promises found in '${item.name}'`)
+          //   }
+          // }
+          // Promise
+          //   .all(ap)
+          //   .then(checkProms)
+          //   .catch(checkProms)
+
+
+          // timeout(1).then(() => {
+          //   timedout = true
+          // })
+
           for (const afterEach of afterEaches) {
             const destroy = mp.setConsoleOutput(testStats.afterEachOutput)
             await afterEach()
@@ -347,8 +407,13 @@ export async function run(block: IBlock, inskip = false, depth = 0, options = ne
           }
           stats.passed.push(item)
           testStats.status = TestStatus.Passed
-        } catch (e) {
-          testStats.error = e
+        } catch (err) {
+          // TODO separate errors for afters, befores, and durings
+          // might still want to run "afterEach" even on failure
+          destroy()
+          destroyPromiseMp()
+          testStats.error = err
+          // testStats.warnings
           stats.failed.push(testStats)
           testStats.status = TestStatus.Failed
         }
@@ -444,6 +509,21 @@ function monkeyPatchConsole(options) {
   }
 }
 
+let allPromises: any[] = []
+const NormalPromise:any = global.Promise
+function monkeyPatchPromise() {
+  ;(global as any).Promise = class Promise extends NormalPromise {
+    constructor(...props) {
+      super(...props)
+      allPromises.push(this)
+    }
+  }
+  return () => {
+    ;(global as any).Promise = NormalPromise
+    allPromises = []
+  }
+}
+
 export function getLocation(matchLine, last=false): ILocation {
   require('source-map-support/register')
   const {stack} = new Error()
@@ -461,4 +541,8 @@ export function getLocation(matchLine, last=false): ILocation {
     filepath,
     lineno,
   }
+}
+
+function timeout(ms) {
+	return new NormalPromise(resolve => setTimeout(resolve, ms));
 }

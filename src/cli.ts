@@ -6,12 +6,14 @@ import chokidar from 'chokidar'
 import fs from 'fs-extra'
 import { Tezt } from './Tezt';
 import {getConfig} from './config'
-import { outputResults } from './output';
+import { reset as singletonReset } from './tezt.singleton'
+import { outputCompositeResults, outputResults } from './output';
 import path from 'path'
 import ('source-map-support/register')
 
 process.env.TEZT = "cli"
 process.env.FORCE_COLOR = process.env.FORCE_COLOR || "1"
+const globalAny: any = global as any
 async function main() {
   const config = await getConfig()
   if (!config.watch) {
@@ -28,7 +30,12 @@ async function main() {
       if (!running) {
         running = true
         setTimeout(async () => {
-          await runTests(config)
+          try {
+            await runTests(config)
+          } catch (err) {
+            console.error('There was a compilation error')
+            console.error(err)
+          }
           running = false
         }, 500)
       }
@@ -67,39 +74,40 @@ async function runTests(config) {
 
   const allTestFiles = await getAllTestFiles(config)
   const requireKeep = Object.keys(require.cache)
-  const compositeStats: any[] = []
+
+  const tezts: any[] = []
+  globalAny.globalAfterAlls = []
+  globalAny.globalBeforeAlls = []
   for (const file of allTestFiles) {
+    singletonReset()
     await import('source-map-support/register')
     await import('ts-node/register')
-    console.log()
-    console.log(chalk.bold(`File: ${file}`))
+    globalAny.$$tezt.file = file
     await import(path.resolve(process.cwd(), file))
-    const stats = await (global as any).$$tezt.run()
-    compositeStats.push(stats)
-    outputResults(stats)
+    tezts.push(globalAny.$$tezt)
   }
-  if (allTestFiles.length > 1) {
-    const results = {
-      failed: 0,
-      skipped: 0,
-      passed: 0,
-    }
-    for (const stats of compositeStats) {
-      results.failed += stats.failed.length
-      results.skipped += stats.skipped.length
-      results.passed += stats.passed.length
-    }
-    const totalTests = results.passed + results.failed + results.skipped
-    const failedMsg = chalk.red(`${results.failed} failed`)
-    const skippedMsg = chalk.yellow(`${results.skipped} skipped`)
-    const passedMsg = chalk.green(`${results.passed} passed`)
-    const totalMsg = `${totalTests} total`
+
+  const compositeStats: any[] = []
+  for (const fn of globalAny.globalBeforeAlls) {
+    await fn()
+  }
+  for (const tezt of tezts) {
+    console.log(chalk.bold(`File: ${tezt.file}`))
+    const stats = await tezt.run()
+    outputResults(stats)
+    compositeStats.push(stats)
     console.log()
-    console.log(`Composite Results: ${failedMsg}, ${skippedMsg}, ${passedMsg}, ${totalMsg}`)
+  }
+  for (const fn of globalAny.globalAfterAlls) {
+    await fn()
+  }
+
+  if (allTestFiles.length > 1) {
+    outputCompositeResults(compositeStats)
   }
   reset()
   function reset() {
-    ;(global as any).$$tezt = new Tezt
+    singletonReset()
     if(config.watch) {
       resetRequire(requireKeep)
     }
@@ -159,3 +167,4 @@ function debounce(func, wait, immediate) {
 		if (callNow) await func(...args)
 	}
 }
+

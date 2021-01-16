@@ -74,3 +74,24 @@ function logoutputs(outputs, depth) {
     }
   }
 }
+
+
+export function outputCompositeResults(compositeStats) {
+  const results = {
+    failed: 0,
+    skipped: 0,
+    passed: 0,
+  }
+  for (const stats of compositeStats) {
+    results.failed += stats.failed.length
+    results.skipped += stats.skipped.length
+    results.passed += stats.passed.length
+  }
+  const totalTests = results.passed + results.failed + results.skipped
+  const failedMsg = chalk.red(`${results.failed} failed`)
+  const skippedMsg = chalk.yellow(`${results.skipped} skipped`)
+  const passedMsg = chalk.green(`${results.passed} passed`)
+  const totalMsg = `${totalTests} total`
+  console.log()
+  console.log(`Composite Results: ${failedMsg}, ${skippedMsg}, ${passedMsg}, ${totalMsg}`)
+}
