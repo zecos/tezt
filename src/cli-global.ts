@@ -11,6 +11,11 @@ import {renderString} from 'termd/src/termd'
 process.env.TEZT = "cli"
 process.env.FORCE_COLOR = process.env.FORCE_COLOR || "1"
 async function main() {
+  if (process.argv.includes("--version") || process.argv.includes("-v")) {
+    const packageJson = await import("../package.json")
+    console.log(packageJson.version)
+    process.exit()
+  }
   if (process.argv.includes("--help") || process.argv.includes("-h")) {
     const readMePath = path.resolve(__dirname, '..', 'README.md')
     const str = (await fs.readFile(readMePath)).toString()
