@@ -4,7 +4,6 @@ import chalk from 'chalk';
 import glob from 'glob-promise'
 import chokidar from 'chokidar'
 import fs from 'fs-extra'
-import { Tezt } from './Tezt';
 import {getConfig} from './config'
 import { reset as singletonReset } from './tezt.singleton'
 import { outputCompositeResults, outputResults } from './output';
@@ -73,6 +72,8 @@ async function runTests(config) {
   }
 
   const allTestFiles = await getAllTestFiles(config)
+  console.log(config)
+  console.log({allTestFiles})
   const requireKeep = Object.keys(require.cache)
 
   const tezts: any[] = []
@@ -139,6 +140,7 @@ async function getAllTestFiles(config) {
       root: config.root || process.cwd(),
       ignore: config.ignorePatterns,
     })
+    console.log({globFiles, testPath, root: config.root, patt: config.testPatterns, ignore: config.ignorePatterns})
     files = files.concat(globFiles.map(file => (
       path.relative(process.cwd(), path.resolve(testPath, file))
     )))

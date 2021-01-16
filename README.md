@@ -1,6 +1,6 @@
 ## Tezt
 
-***This is a work in process...it's all right, but it's not really ready for production use, and there are probably a lot of bugs..and I'm not sure how long it will take me to fix reported issues/add features***
+***BUYER BEWARE: This is a work in process...it's all right, but it's not really ready for production use, and there are probably a lot of bugs..and I'm not sure how long it will take me to fix reported issues/add features***
 
 This is a minimalistic testing library that doesn't usurp control of your node process.
 
@@ -158,12 +158,14 @@ Finally, you can set these flags programmatically by adding a file named `tezt.c
 ```js
 // tezt.config.js
 module.exports = {
-  testPatterns: '**/*.(test|spec).{js,ts}',
+  testPatterns: '**/*.{test,spec}.{js,ts}',
   ignorePatterns: ['node_modules/**', '**/.*', 'dist/**', 'build/**'],
   watchPatterns: ['**/*.{ts,js}'],
   testPaths: ['src'],
 }
 ```
+
+***Ignore the rest of this, I'm not sure if it works right now***
 
 ### Use With VS Code
 
