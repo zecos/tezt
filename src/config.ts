@@ -21,7 +21,7 @@ export async function getConfig() {
     fns: false,
     root,
   }
-  const def = (commandLineConfig.fns || userConfig.fns) ? fnsDefault : defaultConfig
+  const def = (commandLineConfig.fns || (userConfig || {}).fns) ? fnsDefault : defaultConfig
 
   const config =  {
     ...def,
@@ -45,11 +45,11 @@ async function init(config) {
   }
   await fs.writeFile(resolve(config.root, 'tezt.config.js'),
 `module.exports = {
-  testPatterns: '${config.testPatterns}',
-  ignorePatterns: ${strArr(config.ignorePatterns)},
-  watchPatterns: ${strArr(config.watchPatterns)},
-  testPaths: [__dirname],
-  fns: ${config.fns},
+  testPatterns: '${config.testPatterns}', // glob for test files
+  ignorePatterns: ${strArr(config.ignorePatterns)}, // globs of files to ignore
+  watchPatterns: ${strArr(config.watchPatterns)}, // globs for files to watch for changes when using --watch
+  testPaths: [__dirname], // test files and directories of files too look in for test files
+  fns: ${config.fns}, // whether or not to look for an exported "test" function
 }`)
 }
 

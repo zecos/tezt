@@ -41,6 +41,7 @@ npm i -g tezt
 You need `tezt` installed globally for it to work locally.
 
 
+
 #### Writing test files
 
 Implementation is as easy as importing your module, declaring your tests, and running that file.
@@ -114,20 +115,13 @@ test('I can also run asynchonous tests', async () => {
 
 #### Running tests
 
-As stated above, you can simply run the file. If you're using typescript, you would run the test with
+Once you've created the test file, you can run it like a normal file:
 
 ```
 ts-node '<yourfilename>'
 ```
 
-You can also use the command line tool, which you will have to install with yarn or npm
-
-```
-yarn global add tezt
-npm i -g tezt
-```
-
-Then you can run that same file with
+You can also run that same file with the command line tool:
 
 ```
 tezt <yourfilename>
@@ -157,41 +151,33 @@ If you don't specify any files or directories, it will default to your cwd:
 tezt
 ```
 
-You can specify a [glob](https://www.malikbrowne.com/blog/a-beginners-guide-glob-patterns) for the patterns of test files you want to include (`-t` or `--test-patterns`).
+#### Configuration
 
-```
-tezt --test-patterns '**/*.(test|spec).{js,ts}'
-```
-
-You can also specify patterns to ignore (`--ignore-patterns` or `-i`):
-
-```
-tezt --ignore-patterns 'node_modules/**' '**/.*' 'dist/**' 'build/**'
-```
-
-You can also specify which files you want to trigger a re-test (if using the `--watch` flag) (`--watch-patterns` or `--wp`):
-
-```
-tezt --watch-patterns '**/*.{ts,js}'
-```
-
-You cna also specify a project root if you are not in a directory or subdirectory of your project (`--root` or `-r`):
-
-```
-tezt --root myproj
-```
-
-Finally, you can set these flags programmatically by adding a file named `tezt.config.js` in your root directory and exporting a configuration:
-
+You can add a config file to the root of your project:
 
 ```js
 // tezt.config.js
 module.exports = {
+  // glob for test files
   testPatterns: '**/*.{test,spec}.{js,ts}',
-  ignorePatterns: ['node_modules/**', '**/.*', 'dist/**', 'build/**'],
+  // globs of files to ignore
+  ignorePatterns: ['node_modules/**', 'dist/**', 'build/**'],
+  // globs for files to watch for changes when using --watch
   watchPatterns: ['**/*.{ts,js}'],
-  testPaths: ['src'],
+  // test files and directories of files too look in for test files
+  testPaths: [__dirname],
+  // whether or not to look for an exported "test" function
+  fns: false,
 }
+```
+
+or you can use command line flags (with 'src' as the test directory):
+
+```
+tezt --test-patterns|-t '**/*.{test,spec}.{js,ts}' \
+  --ignore-patterns|-i 'node_modules/**' 'dist/**' 'build/**' \
+  --watch-patterns|--wp '**/*.{ts,js}' \
+  src
 ```
 
 ***Ignore the rest of this, I'm not sure if it works right now***
