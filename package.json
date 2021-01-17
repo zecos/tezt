@@ -4,7 +4,7 @@
   "author": "Zane Hitchcox",
   "description": "Minimalist testing library",
   "repository": "https://github.com/zecos/tezt.git",
-  "main": "dist/tezt.singleton.js",
+  "main": "dist/src/tezt.singleton.js",
   "bin": {
     "tezt": "dist/src/cli-global.js"
   },

@@ -7,7 +7,10 @@ Error.prepareStackTrace = (...args) => {
   return originalPrepareStackTrace(...args)
 }
 
+const noop = () => {}
+
 const IN_NODE = typeof window === "undefined"
+const IS_TEST = process.env.NODE_ENV === "test"
 let _global:any = IN_NODE ? global : window
 
 const IN_OTHER = _global.test ||  _global.it
@@ -16,43 +19,46 @@ _global.globalAfterAlls = _global.globalAfterAlls || []
 _global.globalBeforeAlls = _global.globalBeforeAlls || []
 
 let tezt;
-export const  reset = () => _global.$$tezt = tezt = new Tezt
+export const reset = (!IS_TEST && noop) || (() => _global.$$tezt = tezt = new Tezt)
 reset()
 
-export const test:any = _global.it || _global.test || (() => {
+export const test:any = (!IS_TEST && noop) || _global.it || _global.test || (() => {
   const fn = (...args) => tezt.test(...args)
   fn.skip = (...args) => tezt.test.skip(...args)
   fn.only = (...args) => tezt.test.only(...args)
   return fn
 })()
 
-export const describe:any = _global.describe || (() => {
+export const describe:any = (!IS_TEST && noop) || _global.describe || (() => {
   const fn = (...args) => tezt.describe(...args)
   fn.skip = (...args) => tezt.describe.skip(...args)
   fn.only = (...args) => tezt.describe.only(...args)
   return fn
 })()
 
-export const before = _global.before || _global.beforeAll || ((...args) => tezt.before(...args))
-export const beforeEach = _global.beforeEach || ((...args) => tezt.beforeEach(...args))
+export const before = (!IS_TEST && noop) || _global.before || _global.beforeAll || ((...args) => tezt.before(...args))
+export const beforeEach = (!IS_TEST && noop) || _global.beforeEach || ((...args) => tezt.beforeEach(...args))
 export const beforeAll = _global.beforeAll || ((...args) => tezt.beforeAll(...args))
-export const globalBeforeAll = fn => _global.globalBeforeAlls.push(fn)
+export const globalBeforeAll = (!IS_TEST && noop) || (fn => _global.globalBeforeAlls.push(fn))
 
-export const after = _global.after || _global.afterAll || ((...args) => tezt.after(...args))
-export const afterEach = _global.afterEach || ((...args) => tezt.afterEach(...args))
-export const afterAll = _global.afterAll || ((...args) => tezt.afterAll(...args))
+export const after =  (!IS_TEST && noop) || _global.after || _global.afterAll || ((...args) => tezt.after(...args))
+export const afterEach = (!IS_TEST && noop) || _global.afterEach || ((...args) => tezt.afterEach(...args))
+export const afterAll = (!IS_TEST && noop) || _global.afterAll || ((...args) => tezt.afterAll(...args))
 export const globalAfterAll = fn => _global.globalAfterAlls.push(fn)
 
 const actualLog = console.log
-export const only = () => {
+export const only = (!IS_TEST && noop) || (() => {
   ;(_global.only || (() => {}))()
-}
-export const skip = () => {
+})
+export const skip = (!IS_TEST && noop) || (() => {
   ;(_global.skip || (() => {}))()
-}
+})
 
 let hasRun = false
 process.on('beforeExit', async () => {
+  if (!process.env.NODE_ENV === "test") {
+    return
+  }
   if (!hasRun && !IN_OTHER && !(process.env.TEZT === "cli")) {
     hasRun = true
     for (const globalBeforeAll of _global.globalBeforeAlls) {

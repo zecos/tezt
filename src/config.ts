@@ -1,25 +1,56 @@
 import fs from 'fs-extra'
-import path from 'path'
+import path, { resolve } from 'path'
 
 export async function getConfig() {
   const root = await getProjectRoot()
   const commandLineConfig =  await parseCommandLineArgs()
   const userConfig = await getUserConfig(commandLineConfig.root || root)
+  const fnsDefault = {
+    testPatterns: '**/*.{js,ts}',
+    ignorePatterns: ['node_modules/**', 'dist/**', 'build/**'],
+    watchPatterns: ['**/*.{ts,js}'],
+    testPaths: [process.cwd()],
+    fns: true,
+    root,
+  }
   const defaultConfig = {
     testPatterns: '**/*.{test,spec}.{js,ts}',
     ignorePatterns: ['node_modules/**', 'dist/**', 'build/**'],
     watchPatterns: ['**/*.{ts,js}'],
     testPaths: [process.cwd()],
+    fns: false,
     root,
   }
+  const def = (commandLineConfig.fns || userConfig.fns) ? fnsDefault : defaultConfig
 
   const config =  {
-    ...defaultConfig,
+    ...def,
     ...userConfig,
     ...commandLineConfig,
   }
+  if (config.init) {
+    await init(config)
+    process.exit()
+  }
 
   return config
+}
+
+const strArr = arr => `['${arr.join("', '")}']`
+
+async function init(config) {
+  if (!config.root) {
+    console.error('You must run this from within a node project (with a package.json)')
+    process.exit(1)
+  }
+  await fs.writeFile(resolve(config.root, 'tezt.config.js'),
+`module.exports = {
+  testPatterns: '${config.testPatterns}',
+  ignorePatterns: ${strArr(config.ignorePatterns)},
+  watchPatterns: ${strArr(config.watchPatterns)},
+  testPaths: [__dirname],
+  fns: ${config.fns},
+}`)
 }
 
 async function parseCommandLineArgs() {
@@ -37,6 +68,10 @@ async function parseCommandLineArgs() {
       if (!await fs.exists(root)) {
         throw new Error('Could not find root ' + root)
       }
+    } else if (['--fns'].includes(arg)) {
+      config.fns = true
+    } else if (['--init'].includes(arg)) {
+      config.init = true
     } else if (['--test-patterns', '-t'].includes(arg)) {
       while(!args[i+1].startsWith('-')) {
         config.testPatterns = args[++i]
@@ -75,6 +110,12 @@ async function getUserConfig(root) {
   const hasTeztConfigPath = await fs.exists(teztConfigPath)
   if (hasTeztConfigPath) {
     return require(teztConfigPath)
+  } else {
+    const teztConfigPath = path.join(root, 'tezt.config.ts')
+    const hasTeztConfigPath = await fs.exists(teztConfigPath)
+    if (hasTeztConfigPath) {
+      return await import(teztConfigPath)
+    }
   }
   const packageJsonPath = path.join(root, 'package.json')
   const hasPackageJson = await fs.exists(packageJsonPath)

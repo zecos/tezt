@@ -358,10 +358,14 @@ export async function run(block: IBlock, inskip = false, depth = 0, options = ne
           destroyPromiseMp = monkeyPatchPromise()
 
           const timeoutMsg = `'${item.name}' timed out.`
+          let hasResolved = false
           await Promise.race([
-            item.fn(),
+            item.fn().then(()=> hasResolved = true),
             timeout(3000).then(() => timeoutMsg)
           ])
+          if (!hasResolved) {
+            throw new Error(timeoutMsg)
+          }
 
           allPromises = []
           destroy()

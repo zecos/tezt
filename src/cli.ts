@@ -13,6 +13,7 @@ import 'ts-node/register'
 
 process.env.TEZT = "cli"
 process.env.FORCE_COLOR = process.env.FORCE_COLOR || "1"
+process.env.NODE_ENV="test"
 let onlyFiles: string[] = []
 let skipFiles: string[] = []
 const globalAny: any = global as any
@@ -87,9 +88,17 @@ async function runTests(config) {
     globalAny.skip = () => {
       skipFiles.push(file)
     }
+    // @ts-ignore
     singletonReset()
     globalAny.$$tezt.file = file
-    await import(path.resolve(process.cwd(), file))
+    if (config.fns) {
+      const { test } = await import(path.resolve(process.cwd(), file))
+      if (typeof test === "function") {
+        await test()
+      }
+    } else {
+      await import(path.resolve(process.cwd(), file))
+    }
     tezts.push(globalAny.$$tezt)
   }
 
@@ -127,6 +136,7 @@ async function runTests(config) {
   // reset
   onlyFiles = []
   skipFiles = []
+  // @ts-ignore
   singletonReset()
   if(config.watch) {
     resetRequire(requireKeep)
