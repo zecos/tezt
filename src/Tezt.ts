@@ -1,13 +1,7 @@
 import uuid from 'uuid/v4'
 import { RunCallbacks, IRunCallbacks } from './RunCallbacks';
 import { promisify } from 'util'
-
-const actualLog = console.log
-const actualWarn = console.warn
-let runMaybe = () => {
-  actualLog(maybeLog)
-}
-let maybeLog:any = ''
+import { monkeyPatchConsole, IConsoleOutput, ILocation, getLocation } from './patch';
 
 export type TVoidFunc = () => void
 export interface IBlock {
@@ -115,6 +109,13 @@ export class Tezt extends Block implements ITezt {
 
   public test = (() => {
     const test = (name, fn) => {
+      if (typeof name !== "string") {
+        throw new Error("The first argument to `test` must be a string, got " + name)
+      }
+      if (typeof fn !== "function") {
+        console.error('Error in ' + name)
+        throw new Error("The second argument to `test` must be a function, got " + fn)
+      }
       this.curBlock.totalTests++
       const test = new Test(name, fn)
       this.curBlock.children.push(test)
@@ -199,14 +200,6 @@ export class Tezt extends Block implements ITezt {
 }
 
 
-export interface ILocation {
-  filepath: string
-  lineno: string
-}
-
-export class Location implements ILocation {
-  constructor(public filepath, public lineno) {}
-}
 
 
 type TBlockOrTestStats = ITestStats | IBlockStats
@@ -242,17 +235,6 @@ export class TestStats {
   constructor(public item){}
 }
 
-export enum ConsoleOutputType {
-  Warn,
-  Error,
-  Log
-}
-
-export interface IConsoleOutput {
-  type: ConsoleOutputType
-  message: string[]
-  location: ILocation
-}
 
 export interface IBlockStats {
   passed: ITestStats[]
@@ -355,21 +337,21 @@ export async function run(block: IBlock, inskip = false, depth = 0, options = ne
             destroy()
           }
           destroy = mp.setConsoleOutput(testStats.output)
-          destroyPromiseMp = monkeyPatchPromise()
 
           const timeoutMsg = `'${item.name}' timed out.`
           let hasResolved = false
-          await Promise.race([
-            item.fn().then(()=> hasResolved = true),
-            timeout(3000).then(() => timeoutMsg)
-          ])
-          if (!hasResolved) {
-            throw new Error(timeoutMsg)
+          let running = item.fn()
+          if (isPromise(running)) {
+            await Promise.race([
+              running.then(()=> hasResolved = true),
+              timeout(3000).then(() => timeoutMsg)
+            ])
+            if (!hasResolved) {
+              throw new Error(timeoutMsg)
+            }
           }
 
-          allPromises = []
           destroy()
-          destroyPromiseMp()
 
           // doesn't work, but need a way to check
           // for unresolved promises in the future
@@ -399,10 +381,6 @@ export async function run(block: IBlock, inskip = false, depth = 0, options = ne
           //   .then(checkProms)
           //   .catch(checkProms)
 
-
-          // timeout(1).then(() => {
-          //   timedout = true
-          // })
 
           for (const afterEach of afterEaches) {
             const destroy = mp.setConsoleOutput(testStats.afterEachOutput)
@@ -445,108 +423,14 @@ export async function run(block: IBlock, inskip = false, depth = 0, options = ne
   return stats
 }
 
-const noop = (...args) => {}
-function monkeyPatchConsole(options) {
-  let prevConsoleLog = console.log
-  let prevConsoleWarn = console.warn
-  let prevConsoleError = console.error
-  let onConsoleWarn = noop
-  let onConsoleLog = noop
-  let onConsoleError = noop
-  console.log = (...args) => {
-    onConsoleLog(...args)
-    if (options.outputConsole) {
-      prevConsoleLog(...args)
-    }
-  }
-  console.warn = (...args) => {
-    onConsoleWarn(...args)
-    if (options.outputConsole) {
-      prevConsoleWarn(...args)
-    }
-  }
-  console.error = (...args) => {
-    onConsoleError(...args)
-    if (options.outputConsole) {
-      prevConsoleError(...args)
-    }
-  }
-  const dispose = () => {
-    console.log = prevConsoleLog
-    console.warn = prevConsoleWarn
-    console.error = prevConsoleError
 
-  }
-  dispose.setConsoleOutput = setConsoleOutput
-  return dispose
 
-  function setConsoleOutput(outputArr) {
-    const prevOnConsoleWarn = onConsoleWarn
-    onConsoleWarn = (...args) => {
-      outputArr.push({
-        message: args.map(String),
-        location: getLocation(/Object.console\.warn/),
-        type: ConsoleOutputType.Warn
-      })
-    }
-    const prevOnConsoleError = onConsoleError
-    onConsoleError = (...args) => {
-      outputArr.push({
-        message: args.map(String),
-        location: getLocation(/Object.console\.error/),
-        type: ConsoleOutputType.Error
-      })
-    }
-    const prevOnConsoleLog = onConsoleLog
-    onConsoleLog = (...args) => {
-      outputArr.push({
-        message: args.map(String),
-        location: getLocation(/Object.console\.log/),
-        type: ConsoleOutputType.Log
-      })
-    }
-    return () => {
-      onConsoleWarn = prevOnConsoleWarn
-      onConsoleError = prevOnConsoleError
-      onConsoleLog = prevOnConsoleLog
-    }
-  }
-}
 
-let allPromises: any[] = []
 const NormalPromise:any = global.Promise
-function monkeyPatchPromise() {
-  ;(global as any).Promise = class Promise extends NormalPromise {
-    constructor(...props) {
-      super(...props)
-      allPromises.push(this)
-    }
-  }
-  return () => {
-    ;(global as any).Promise = NormalPromise
-    allPromises = []
-  }
-}
-
-export function getLocation(matchLine, last=false): ILocation {
-  require('source-map-support/register')
-  const {stack} = new Error()
-  const lines = stack
-    .split('\n')
-  if (last) {
-    maybeLog = lines
-  }
-
-  const lineIndex = lines.findIndex(line => matchLine.test(line))
-
-  const fileLine = lines[lineIndex + 1]
-  const [_, filepath, lineno] = /.*\s\(?([^:]+):(\d+):\d+\)?$/.exec(fileLine)
-  return {
-    filepath,
-    lineno,
-  }
-}
-
 function timeout(ms) {
 	return new NormalPromise(resolve => setTimeout(resolve, ms));
+}
+
+function isPromise(p) {
+  return p && Object.prototype.toString.call(p) === "[object Promise]";
 }

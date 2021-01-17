@@ -56,7 +56,7 @@ export const skip = (!IS_TEST && noop) || (() => {
 
 let hasRun = false
 process.on('beforeExit', async () => {
-  if (!process.env.NODE_ENV === "test") {
+  if (process.env.NODE_ENV !== "test") {
     return
   }
   if (!hasRun && !IN_OTHER && !(process.env.TEZT === "cli")) {

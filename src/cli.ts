@@ -114,13 +114,15 @@ async function runTests(config) {
     let isOnly = false
     if (onlyFiles.length) {
       if (!onlyFiles.includes(tezt.file)) {
-        console.log(` ${tezt.file}`)
         continue
       }
       isOnly = true
     }
-    console.log(chalk.bold(`File${isOnly ? " (Only)" : ""}: ${tezt.file}`))
     const stats = await tezt.run()
+    if (stats.totalRun === 0) {
+      continue
+    }
+    console.log(chalk.bold(`File${isOnly ? " (Only)" : ""}: ${tezt.file}`))
     outputResults(stats)
     compositeStats.push(stats)
     console.log()
@@ -128,8 +130,7 @@ async function runTests(config) {
   for (const fn of globalAny.globalAfterAlls) {
     await fn()
   }
-  const actualLength = onlyFiles.length || (allTestFiles.length - skipFiles.length)
-  if (actualLength > 1) {
+  if (outputResults.length > 1) {
     outputCompositeResults(compositeStats)
   }
 
@@ -183,18 +184,3 @@ async function getAllTestFiles(config) {
     console.error(e)
   }
 })()
-
-function debounce(func, wait, immediate) {
-	var timeout
-	return async function(...args) {
-		var later = async function() {
-			timeout = null
-			if (!immediate) await func(...args)
-    }
-		var callNow = immediate && !timeout
-		clearTimeout(timeout)
-		timeout = setTimeout(later, wait)
-		if (callNow) await func(...args)
-	}
-}
-
