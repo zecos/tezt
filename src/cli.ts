@@ -120,7 +120,6 @@ async function runTests(config) {
       isOnly = true
     }
     const stats = await tezt.run()
-    log(`${stats.totalRun} ${tezt.file}`)
     if (stats.totalRun === 0) {
       continue
     }

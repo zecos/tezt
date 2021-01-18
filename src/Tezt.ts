@@ -340,13 +340,11 @@ export async function run(block: IBlock, inskip = false, depth = 0, options = ne
           destroy = mp.setConsoleOutput(testStats.output)
 
           let hasResolved = false
-          log('running ' + item.name)
           let running = item.fn()
           if (isPromise(running)) {
             await Promise.race([
               running
                 .then(()=> {
-                  log('resolving', item.name)
                   hasResolved = true
                 }),
               timeout(3000)
