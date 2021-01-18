@@ -44,6 +44,7 @@ function outputContent(stats) {
       const {item, status, depth} = itemStats
       const {name} = item
       const precursor = precursors[status]
+        console.log("status", status)
       const indentation = "  ".repeat(depth)
       const { location } = itemStats.item
       const relativepath = path.relative(process.cwd(), location.filepath)

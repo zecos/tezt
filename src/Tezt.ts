@@ -2,6 +2,7 @@ import uuid from 'uuid/v4'
 import { RunCallbacks, IRunCallbacks } from './RunCallbacks';
 import { promisify } from 'util'
 import { monkeyPatchConsole, IConsoleOutput, ILocation, getLocation } from './patch';
+const log = console.log
 
 export type TVoidFunc = () => void
 export interface IBlock {
@@ -338,16 +339,20 @@ export async function run(block: IBlock, inskip = false, depth = 0, options = ne
           }
           destroy = mp.setConsoleOutput(testStats.output)
 
-          const timeoutMsg = `'${item.name}' timed out.`
           let hasResolved = false
+          log('running ' + item.name)
           let running = item.fn()
           if (isPromise(running)) {
             await Promise.race([
-              running.then(()=> hasResolved = true),
-              timeout(3000).then(() => timeoutMsg)
+              running
+                .then(()=> {
+                  log('resolving', item.name)
+                  hasResolved = true
+                }),
+              timeout(3000)
             ])
             if (!hasResolved) {
-              throw new Error(timeoutMsg)
+              throw new Error(`'${item.name}' timed out.`)
             }
           }
 
@@ -393,9 +398,7 @@ export async function run(block: IBlock, inskip = false, depth = 0, options = ne
           // TODO separate errors for afters, befores, and durings
           // might still want to run "afterEach" even on failure
           destroy()
-          destroyPromiseMp()
           testStats.error = err
-          // testStats.warnings
           stats.failed.push(testStats)
           testStats.status = TestStatus.Failed
         }

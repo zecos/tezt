@@ -11,6 +11,7 @@ import path from 'path'
 import 'source-map-support/register'
 import 'ts-node/register'
 
+const log = console.log
 process.env.TEZT = "cli"
 process.env.FORCE_COLOR = process.env.FORCE_COLOR || "1"
 process.env.NODE_ENV="test"
@@ -108,7 +109,7 @@ async function runTests(config) {
   }
   for (const tezt of tezts) {
     if (skipFiles.includes(tezt.file)) {
-      console.log(`Skipping: ${tezt.file}`)
+      log(`Skipping: ${tezt.file}`)
       continue
     }
     let isOnly = false
@@ -119,6 +120,7 @@ async function runTests(config) {
       isOnly = true
     }
     const stats = await tezt.run()
+    log(`${stats.totalRun} ${tezt.file}`)
     if (stats.totalRun === 0) {
       continue
     }
@@ -130,7 +132,10 @@ async function runTests(config) {
   for (const fn of globalAny.globalAfterAlls) {
     await fn()
   }
-  if (outputResults.length > 1) {
+  if (compositeStats.length === 0) {
+    log('There were no tests to run.')
+  }
+  if (compositeStats.length > 1) {
     outputCompositeResults(compositeStats)
   }
 
