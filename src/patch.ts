@@ -1,3 +1,4 @@
+import { platform } from 'os'
 const noop = (...args) => {}
 
 export interface ILocation {
@@ -96,7 +97,10 @@ export function getLocation(matchLine, last=false): ILocation {
   const lineIndex = lines.findIndex(line => matchLine.test(line))
 
   const fileLine = lines[lineIndex + 1]
-  const [_, filepath, lineno] = /.*\s\(?([^:]+):(\d+):\d+\)?$/.exec(fileLine)
+  const regExp = platform() !== "win32" ?
+    /.*\s\(?([^:]+):(\d+):\d+\)?$/ :
+    /.*\s\(?\w:([^:]+):(\d+):\d+\)?$/
+  const [_, filepath, lineno] = regExp.exec(fileLine)
   return {
     filepath,
     lineno,
