@@ -46,13 +46,14 @@ export const afterEach = (!IS_TEST && noop) || _global.afterEach || ((...args) =
 export const afterAll = (!IS_TEST && noop) || _global.afterAll || ((...args) => tezt.afterAll(...args))
 export const globalAfterAll = fn => _global.globalAfterAlls.push(fn)
 
-const actualLog = console.log
 export const only = (!IS_TEST && noop) || (() => {
   ;(_global.only || (() => {}))()
 })
 export const skip = (!IS_TEST && noop) || (() => {
   ;(_global.skip || (() => {}))()
 })
+
+export const expect = (!IS_TEST && noop) || require('expect')
 
 let hasRun = false
 process.on('beforeExit', async () => {
