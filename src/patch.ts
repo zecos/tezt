@@ -1,6 +1,7 @@
 import { platform } from 'os'
 const noop = (...args) => {}
 
+const log = console.log
 export interface ILocation {
   filepath: string
   lineno: string
@@ -60,7 +61,7 @@ export function monkeyPatchConsole(options) {
     onConsoleWarn = (...args) => {
       outputArr.push({
         message: args.map(String),
-        location: getLocation(/Object.console\.warn/),
+        location: getLocation(/(Object.console\.warn|at console\.warn)/),
         type: ConsoleOutputType.Warn
       })
     }
@@ -68,7 +69,7 @@ export function monkeyPatchConsole(options) {
     onConsoleError = (...args) => {
       outputArr.push({
         message: args.map(String),
-        location: getLocation(/Object.console\.error/),
+        location: getLocation(/(Object.console|at console\.error)/),
         type: ConsoleOutputType.Error
       })
     }
@@ -76,7 +77,7 @@ export function monkeyPatchConsole(options) {
     onConsoleLog = (...args) => {
       outputArr.push({
         message: args.map(String),
-        location: getLocation(/Object.console\.log/),
+        location: getLocation(/(Object.console\.log|at console\.log)/),
         type: ConsoleOutputType.Log
       })
     }
@@ -88,18 +89,32 @@ export function monkeyPatchConsole(options) {
   }
 }
 
-export function getLocation(matchLine, last=false): ILocation {
+export function getLocation(matchLine): ILocation {
   require('source-map-support/register')
   const {stack} = new Error()
   const lines = stack
     .split('\n')
 
+  log(matchLine)
   const lineIndex = lines.findIndex(line => matchLine.test(line))
 
   const fileLine = lines[lineIndex + 1]
   const regExp = platform() !== "win32" ?
     /.*\s\(?([^:]+):(\d+):\d+\)?$/ :
     /.*\s\(?\w:([^:]+):(\d+):\d+\)?$/
+  const regExp2 = platform() !== "win32" ?
+    /.*\s\(?([^:]+):(\d+):\d+\)?$/ :
+    /.*\s\(?\w:([^:]+):(\d+):\d+\)?$/
+  const result = regExp2.exec(fileLine)
+  if (!result) {
+    log('result')
+    log(lineIndex)
+    log(result)
+    log(platform())
+    log(fileLine)
+    log(lines)
+  }
+
   const [_, filepath, lineno] = regExp.exec(fileLine)
   return {
     filepath,

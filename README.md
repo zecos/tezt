@@ -2,7 +2,7 @@
 
 ### Testing made "ez"
 
-***BUYER BEWARE: This is a work in process...it's all right, but it's not really ready for production use, and there are probably a lot of bugs..and I'm not sure how long it will take me to fix reported issues/add features***
+**Note: this is still in beta, and the api is likely to change**
 
 This is a minimalistic testing library that doesn't usurp control of your node process.
 
@@ -50,7 +50,15 @@ Implementation is as easy as importing your module, declaring your tests, and ru
 
 
 ```ts
-import { test, describe, before, after, afterEach, beforeEach, expect } from 'tezt'
+import {
+  test,
+  describe,
+  before,
+  after,
+  afterEach,
+  beforeEach,
+  expect
+} from 'tezt'
 
 test('this is my test', () => {
   expect('hello').toBe('hello')

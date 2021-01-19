@@ -38,7 +38,7 @@ export class Item implements IItem {
   constructor(public name) {}
   id = new uuid()
   location = (() => (
-    getLocation(/tezt\.singleton\.(t|j)s/, true)
+    getLocation(/tezt\.singleton\.(t|j)s/)
   ))()
   skip = false
   only = false

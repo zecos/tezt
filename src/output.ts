@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import path from 'path'
 
-import { BlockStats, TestStats,  TestStatus } from './Tezt';
+import { TestStatus } from './Tezt';
 import { ConsoleOutputType } from './patch'
 
 export function outputResults (stats) {
