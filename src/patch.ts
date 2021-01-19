@@ -95,25 +95,12 @@ export function getLocation(matchLine): ILocation {
   const lines = stack
     .split('\n')
 
-  log(matchLine)
   const lineIndex = lines.findIndex(line => matchLine.test(line))
 
   const fileLine = lines[lineIndex + 1]
   const regExp = platform() !== "win32" ?
     /.*\s\(?([^:]+):(\d+):\d+\)?$/ :
     /.*\s\(?\w:([^:]+):(\d+):\d+\)?$/
-  const regExp2 = platform() !== "win32" ?
-    /.*\s\(?([^:]+):(\d+):\d+\)?$/ :
-    /.*\s\(?\w:([^:]+):(\d+):\d+\)?$/
-  const result = regExp2.exec(fileLine)
-  if (!result) {
-    log('result')
-    log(lineIndex)
-    log(result)
-    log(platform())
-    log(fileLine)
-    log(lines)
-  }
 
   const [_, filepath, lineno] = regExp.exec(fileLine)
   return {
