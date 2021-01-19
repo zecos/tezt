@@ -113,6 +113,18 @@ test('I can also run asynchonous tests', async () => {
 })
 ```
 
+#### Additional Functions
+
+In addition to the jest/mocha api, there are also additional functions exported by tezt:
+
+[`expect`](https://github.com/mjackson/expect): Michael Jackson's library
+`globalBeforeAll`: a function run before all functions in all files
+  * useful for adding global setup like starting a testing server
+`globalAfterAll`: a function run after all functions in all files
+  * useful for adding global teardown like stopping a testing server
+`only`: like `test.only`, except only runs that particular file
+`skip`: like `test.skip`, except skips that particular file
+
 #### Running tests
 
 Once you've created the test file, you can run it like a normal file:
