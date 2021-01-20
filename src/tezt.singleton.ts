@@ -19,11 +19,11 @@ _global.globalAfterAlls = _global.globalAfterAlls || []
 _global.globalBeforeAlls = _global.globalBeforeAlls || []
 
 let tezt;
-export const reset = (!IS_TEST && noop) || (() => _global.$$tezt = tezt = new Tezt)
+export const reset = (!IS_TEST && noop) || (() => _global.$$tezt = new Tezt)
 if (!_global.$$tezt) {
   reset()
-  tezt = _global.$$tezt
 }
+tezt = _global.$$tezt
 
 export const test:any = (!IS_TEST && noop) || _global.it || _global.test || (() => {
   const fn = (...args) => tezt.test(...args)
