@@ -201,6 +201,18 @@ tezt --test-patterns|-t '**/*.{test,spec}.{js,ts}' \
   src
 ```
 
+### Use with Create React App
+
+To use this with CRA, you'll need to add the following to your `tsconfig.json`:
+
+```
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  },
+```
+
 ### Related
 
 [jest](https://jestjs.io)
