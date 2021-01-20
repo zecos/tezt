@@ -236,6 +236,14 @@ globalBeforeAll(async () => {
 })
 ```
 
+add
+
+```
+declare module '@testing-library/react'
+```
+
+to `react-app-env.d.ts`
+
 ### Related
 
 [jest](https://jestjs.io)
