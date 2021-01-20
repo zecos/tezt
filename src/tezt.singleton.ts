@@ -20,7 +20,10 @@ _global.globalBeforeAlls = _global.globalBeforeAlls || []
 
 let tezt;
 export const reset = (!IS_TEST && noop) || (() => _global.$$tezt = tezt = new Tezt)
-reset()
+if (!_global.$$tezt) {
+  reset()
+  tezt = _global.$$tezt
+}
 
 export const test:any = (!IS_TEST && noop) || _global.it || _global.test || (() => {
   const fn = (...args) => tezt.test(...args)
