@@ -61,11 +61,18 @@ async function init(config) {
   }
   await fs.writeFile(resolve(config.root, 'tezt.config.js'),
 `module.exports = {
-  testPatterns: '${config.testPatterns}', // glob for test files
-  ignorePatterns: ${strArr(config.ignorePatterns)}, // globs of files to ignore
-  watchPatterns: ${strArr(config.watchPatterns)}, // globs for files to watch for changes when using --watch
-  testPaths: [__dirname], // test files and directories of files too look in for test files
-  fns: ${config.fns}, // whether or not to look for an exported "test" function
+  // glob for test files
+  testPatterns: '${config.testPatterns}',
+  // globs of files to ignore
+  ignorePatterns: ${strArr(config.ignorePatterns)},
+  // globs for files to watch for changes when using --watch
+  watchPatterns: ${strArr(config.watchPatterns)},
+  // test files and directories of files too look in for test files
+  testPaths: [__dirname],
+  // include virtual dom (js-dom)
+  dom: ${config.dom},
+  // whether or not to look for an exported "test" function
+  fns: ${config.fns},
 }`)
 }
 
