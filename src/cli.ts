@@ -10,9 +10,8 @@ import { outputCompositeResults, outputResults } from './output';
 import path from 'path'
 import 'source-map-support/register'
 import 'ts-node/register'
-import register from 'ignore-styles'
+import 'ignore-styles'
 // don't fail when it tries to import css
-register(['sass', 'scss', 'css'])
 
 const tsNodeString =`"ts-node": {
   "compilerOptions": {

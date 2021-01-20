@@ -6,17 +6,17 @@ export async function getConfig() {
   const commandLineConfig =  await parseCommandLineArgs()
   const userConfig = await getUserConfig(commandLineConfig.root || root)
   const fnsDefault = {
-    testPatterns: '**/*.{js,ts}',
+    testPatterns: '**/*.{js,ts}{,x}',
     ignorePatterns: ['node_modules/**', 'dist/**', 'build/**'],
-    watchPatterns: ['**/*.{ts,js}'],
+    watchPatterns: ['**/*.{ts,js}{,x}'],
     testPaths: [process.cwd()],
     fns: true,
     root,
   }
   const defaultConfig = {
-    testPatterns: '**/*.{test,spec}.{js,ts}',
+    testPatterns: '**/*.{test,spec}.{js,ts}{,x}',
     ignorePatterns: ['node_modules/**', 'dist/**', 'build/**'],
-    watchPatterns: ['**/*.{ts,js}'],
+    watchPatterns: ['**/*.{ts,js}{,x}'],
     testPaths: [process.cwd()],
     fns: false,
     root,
