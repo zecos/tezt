@@ -6,9 +6,9 @@ const baseDefault = {
   testPatterns: '{**/,}*.(test|spec).{js,ts}{,x}',
   // globs of files to ignore
   ignorePatterns: [
-    'node_modules/**',
-    'dist/**',
-    'build/**',
+    '{**/,}node_modules/**',
+    '{**/,}dist/**',
+    '{**/,}build/**',
     '{**/,}*.d.ts'
   ],
   // globs for files to watch for changes when using --watch
