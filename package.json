@@ -21,6 +21,8 @@
     "glob": "^7.1.6",
     "glob-promise": "^3.4.0",
     "ignore-styles": "^5.0.1",
+    "jsdom": "^16.4.0",
+    "node-fetch": "^2.6.1",
     "react": "^17.0.1",
     "source-map-support": "^0.5.19",
     "termd": "^1.4.0",

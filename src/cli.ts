@@ -8,6 +8,7 @@ import {getConfig} from './config'
 import { reset as singletonReset } from './tezt.singleton'
 import { outputCompositeResults, outputResults } from './output';
 import path from 'path'
+import fetch from 'node-fetch'
 import 'source-map-support/register'
 import 'ts-node/register'
 import 'ignore-styles'
@@ -103,6 +104,9 @@ async function runTests(config) {
   const tezts: any[] = []
   globalAny.globalAfterAlls = []
   globalAny.globalBeforeAlls = []
+  if (config.dom) {
+    await emulateDom()
+  }
   for (const file of allTestFiles) {
     globalAny.only = () => {
       onlyFiles.push(file)
@@ -209,3 +213,32 @@ async function getAllTestFiles(config) {
     console.error(e)
   }
 })()
+
+declare var global: any;
+const emulateDom = async () => {
+  const { JSDOM } = await import('jsdom');
+
+  const jsdom = new JSDOM('<!doctype html><html><body></body></html>');
+  const { window } = jsdom;
+
+  function copyProps(src, target) {
+    Object.defineProperties(target, {
+      ...Object.getOwnPropertyDescriptors(src),
+      ...Object.getOwnPropertyDescriptors(target),
+    });
+  }
+
+  global.window = window;
+  global.document = window.document;
+  global.navigator = {
+    userAgent: 'node.js',
+  };
+  global.fetch = fetch
+  global.requestAnimationFrame = function (callback) {
+    return setTimeout(callback, 0);
+  };
+  global.cancelAnimationFrame = function (id) {
+    clearTimeout(id);
+  };
+  copyProps(window, global);
+}

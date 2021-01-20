@@ -1,33 +1,39 @@
 import fs from 'fs-extra'
 import path, { resolve } from 'path'
 
+const baseDefault = {
+  // glob for test files
+  testPatterns: '{**/,}*.(test|spec).{js,ts}{,x}',
+  // globs of files to ignore
+  ignorePatterns: [
+    'node_modules/**',
+    'dist/**',
+    'build/**',
+    '{**/,}*.d.ts'
+  ],
+  // globs for files to watch for changes when using --watch
+  watchPatterns: ['{**/,}*.{ts,js}{,x}'],
+  // test files and directories of files too look in for test files
+  testPaths: [process.cwd()],
+  // emulate the dom during tests
+  dom: false,
+  // whether or not to look for an exported "test" function
+  fns: true,
+}
+
 export async function getConfig() {
   const root = await getProjectRoot()
   const commandLineConfig =  await parseCommandLineArgs()
   const userConfig = await getUserConfig(commandLineConfig.root || root)
   const fnsDefault = {
-    testPatterns: '{**/,}*.{js,ts}{,x}',
-    ignorePatterns: [
-      'node_modules/**',
-      'dist/**',
-      'build/**',
-      '{**/,}*.d.ts'
-    ],
-    watchPatterns: ['{**/,}*.{ts,js}{,x}'],
-    testPaths: [process.cwd()],
+    ...baseDefault,
     fns: true,
+    testPatterns: '{**/,}*.{js,ts}{,x}',
     root,
   }
   const defaultConfig = {
+    ...baseDefault,
     testPatterns: '{**/,}*.{test,spec}.{js,ts}{,x}',
-    ignorePatterns: [
-      'node_modules/**',
-      'dist/**',
-      'build/**',
-      '{**/,}*.d.ts'
-    ],
-    watchPatterns: ['{**/,}*.{ts,js}{,x}'],
-    testPaths: [process.cwd()],
     fns: false,
     root,
   }
@@ -72,6 +78,8 @@ async function parseCommandLineArgs() {
     const arg = args[i]
     if (['-w', '--watch'].includes(arg)) {
       config.watch = true
+    } else if (['--dom', '-d'].includes(arg)) {
+      config.dom = true
     } else if (['--root', '-r'].includes(arg)) {
       const root = args[i+1]
       config.root = root
