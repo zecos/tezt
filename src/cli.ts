@@ -34,7 +34,6 @@ async function main() {
   }
 
   let running = false
-  log('watching')
   chokidar
     .watch([config.watchPatterns, config.testPatterns], {
       ignored: config.ignorePatterns,
