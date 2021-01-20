@@ -14,6 +14,11 @@ import register from 'ignore-styles'
 // don't fail when it tries to import css
 register(['sass', 'scss', 'css'])
 
+const tsNodeString =`"ts-node": {
+  "compilerOptions": {
+    "modules": "commonjs"
+  }
+}`
 
 const log = console.log
 process.env.TEZT = "cli"
@@ -78,6 +83,19 @@ async function runTests(config) {
       console.log(`(cd ${config.root} && npm install --save-dev tezt)`)
     } else {
       console.log(`npm install --save-dev tezt`)
+    }
+  }
+  if (fs.existsSync(path.resolve(config.root, "tsconfig.json"))) {
+    const tsConfigJson = await import(path.resolve(config.root, "tsconfig.json"))
+    if (tsConfigJson.module && tsConfigJson.module !== "commonjs") {
+      if (!tsConfigJson['ts-node']
+        || !tsConfigJson['compilerOptions']
+        || !tsConfigJson['compilerOptions']['modules']
+        || tsConfigJson['compilerOptions']['modules'] !== 'commonjs') {
+          console.error(`Please set "module" to "commonjs" in your tsconfig.json or `)
+          console.error(`add \n${tsNodeString}\nto your tsconfig.json`)
+          process.exit(1)
+        }
     }
   }
 
