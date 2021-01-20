@@ -215,6 +215,27 @@ To use this with CRA, you'll need to add the following to your `tsconfig.json`:
   },
 ```
 
+### Use with @testing-library/react
+
+You'll want to extend the expect function and use `--dom` with your config:
+
+```
+tezt --dom
+```
+
+```ts
+// setupTests.ts
+
+import { expect, globalBeforeAll } from 'tezt'
+
+declare var global:any;
+globalBeforeAll(async () => {
+  global.expect = expect
+  await import('@testing-library/jest-dom/extend-expect')
+  delete global.expect
+})
+```
+
 ### Related
 
 [jest](https://jestjs.io)
