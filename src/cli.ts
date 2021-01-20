@@ -10,6 +10,10 @@ import { outputCompositeResults, outputResults } from './output';
 import path from 'path'
 import 'source-map-support/register'
 import 'ts-node/register'
+import register from 'ignore-styles'
+// don't fail when it tries to import css
+register(['sass', 'scss', 'css'])
+
 
 const log = console.log
 process.env.TEZT = "cli"
@@ -25,6 +29,7 @@ async function main() {
   }
 
   let running = false
+  log('watching')
   chokidar
     .watch([config.watchPatterns, config.testPatterns], {
       ignored: config.ignorePatterns,
