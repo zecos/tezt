@@ -19,15 +19,12 @@ _global.globalAfterAlls = _global.globalAfterAlls || []
 _global.globalBeforeAlls = _global.globalBeforeAlls || []
 
 let tezt;
-const log = console.log
-export const reset = (!IS_TEST && noop) || (() => _global.$$tezt = new Tezt)
+export const reset = (!IS_TEST && noop) || (() => _global.$$tezt = tezt = new Tezt)
 if (!_global.$$tezt) {
   reset()
-  log("global tezt not found")
 } else {
-  log('global tezt found')
+  tezt = _global.$$tezt
 }
-tezt = _global.$$tezt
 
 export const test:any = (!IS_TEST && noop) || _global.it || _global.test || (() => {
   const fn = (...args) => tezt.test(...args)

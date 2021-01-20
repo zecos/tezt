@@ -108,7 +108,6 @@ async function runTests(config) {
     await emulateDom()
   }
   for (const file of allTestFiles) {
-    log(file)
     globalAny.only = () => {
       onlyFiles.push(file)
     }
