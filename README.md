@@ -187,6 +187,8 @@ module.exports = {
   watchPatterns: ['**/*.{ts,js}'],
   // test files and directories of files too look in for test files
   testPaths: [__dirname],
+  // emulate the dom during tests
+  dom: false,
   // whether or not to look for an exported "test" function
   fns: false,
 }
