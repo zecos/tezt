@@ -2,8 +2,10 @@ import uuid from 'uuid/v4'
 import { RunCallbacks, IRunCallbacks } from './RunCallbacks';
 import { promisify } from 'util'
 import { monkeyPatchConsole, IConsoleOutput, ILocation, getLocation } from './patch';
+import { skip } from './tezt.singleton';
 const log = console.log
 
+skip()
 const globalAny: any = global
 export type TVoidFunc = () => void
 export interface IBlock {

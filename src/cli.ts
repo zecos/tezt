@@ -102,6 +102,8 @@ async function runTests(config) {
   const requireKeep = Object.keys(require.cache)
 
   const tezts: any[] = []
+  globalAny.globalBeforeEaches = []
+  globalAny.globalAfterEaches = []
   globalAny.globalAfterAlls = []
   globalAny.globalBeforeAlls = []
   if (config.dom) {
