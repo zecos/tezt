@@ -1,6 +1,6 @@
 {
   "name": "tezt",
-  "version": "0.0.47",
+  "version": "0.0.48",
   "author": "Zane Hitchcox",
   "description": "Minimalist testing library",
   "repository": "https://github.com/zecos/tezt.git",
