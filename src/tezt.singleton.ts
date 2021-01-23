@@ -42,11 +42,13 @@ export const describe:any = (!IS_TEST && noop) || _global.describe || (() => {
 
 export const before = (!IS_TEST && noop) || _global.before || _global.beforeAll || ((...args) => tezt.before(...args))
 export const beforeEach = (!IS_TEST && noop) || _global.beforeEach || ((...args) => tezt.beforeEach(...args))
+export const globalBeforeEach = fn => _global.globalBeforeEaches.push(fn)
 export const beforeAll = _global.beforeAll || ((...args) => tezt.beforeAll(...args))
 export const globalBeforeAll = (!IS_TEST && noop) || (fn => _global.globalBeforeAlls.push(fn))
 
 export const after =  (!IS_TEST && noop) || _global.after || _global.afterAll || ((...args) => tezt.after(...args))
 export const afterEach = (!IS_TEST && noop) || _global.afterEach || ((...args) => tezt.afterEach(...args))
+export const globalAfterEach = fn => _global.globalAfterEaches.push(fn)
 export const afterAll = (!IS_TEST && noop) || _global.afterAll || ((...args) => tezt.afterAll(...args))
 export const globalAfterAll = fn => _global.globalAfterAlls.push(fn)
 

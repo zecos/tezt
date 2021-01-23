@@ -4,6 +4,7 @@ import { promisify } from 'util'
 import { monkeyPatchConsole, IConsoleOutput, ILocation, getLocation } from './patch';
 const log = console.log
 
+const globalAny: any = global
 export type TVoidFunc = () => void
 export interface IBlock {
   children: TItem[]
@@ -332,6 +333,11 @@ export async function run(block: IBlock, inskip = false, depth = 0, options = ne
           testStats.status = TestStatus.Skipped
             continue
           }
+          for (const globalBeforeEach of globalAny.globalBeforeEaches) {
+            const destroy = mp.setConsoleOutput(testStats.beforeEachOutput)
+            await globalBeforeEach()
+            destroy()
+          }
           for (const beforeEach of beforeEaches) {
             const destroy = mp.setConsoleOutput(testStats.beforeEachOutput)
             await beforeEach()
@@ -356,38 +362,14 @@ export async function run(block: IBlock, inskip = false, depth = 0, options = ne
 
           destroy()
 
-          // doesn't work, but need a way to check
-          // for unresolved promises in the future
-
-          // const ap = allPromises
-          // allPromises = []
-          // destroy()
-          // destroyPromiseMp()
-
-          // let timedout = false
-          // const checkProms = proms => {
-          //   if (!timedout) {
-          //     return
-          //   }
-          //   if (proms instanceof Error) {
-          //     return actualWarn(`Unawaited promises errored in '${item.name}'`)
-          //   }
-          //   const unAwaited = proms
-          //     .filter(Boolean)
-          //     .filter(item => item !== timeoutMsg)
-          //   if (unAwaited.length) {
-          //     actualWarn(`Unawaited promises found in '${item.name}'`)
-          //   }
-          // }
-          // Promise
-          //   .all(ap)
-          //   .then(checkProms)
-          //   .catch(checkProms)
-
-
           for (const afterEach of afterEaches) {
             const destroy = mp.setConsoleOutput(testStats.afterEachOutput)
             await afterEach()
+            destroy()
+          }
+          for (const globalAfterEach of globalAny.globalAfterEaches) {
+            const destroy = mp.setConsoleOutput(testStats.beforeEachOutput)
+            await globalAfterEach()
             destroy()
           }
           stats.passed.push(item)

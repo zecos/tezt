@@ -89,6 +89,7 @@ export function monkeyPatchConsole(options) {
   }
 }
 
+const error = console.error
 export function getLocation(matchLine): ILocation {
   require('source-map-support/register')
   const {stack} = new Error()
@@ -101,8 +102,15 @@ export function getLocation(matchLine): ILocation {
   const regExp = platform() !== "win32" ?
     /.*\s\(?([^:]+):(\d+):\d+\)?$/ :
     /.*\s\(?\w:([^:]+):(\d+):\d+\)?$/
+  const result = regExp.exec(fileLine)
+  if (!result) {
+    return  {
+      filepath: 'unknown',
+      lineno: 'unkown',
+    }
+  }
 
-  const [_, filepath, lineno] = regExp.exec(fileLine)
+  const [_, filepath, lineno] = result
   return {
     filepath,
     lineno,
