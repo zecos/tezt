@@ -8,7 +8,6 @@ Error.prepareStackTrace = (...args) => {
 }
 
 const noop = () => {}
-console.log("getting singleton")
 
 const IN_NODE = typeof window === "undefined"
 const IS_TEST = process.env.NODE_ENV === "test"
