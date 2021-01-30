@@ -22,7 +22,6 @@ _global.globalBeforeAlls = _global.globalBeforeAlls || []
 let tezt;
 export const reset = (!IS_TEST && noop) || (() => _global.$$tezt = tezt = new Tezt)
 if (!_global.$$tezt) {
-  console.log("tezt was not found")
   reset()
 } else {
   console.log("tezt was found")

@@ -26,7 +26,6 @@ process.env.FORCE_COLOR = process.env.FORCE_COLOR || "1"
 process.env.NODE_ENV="test"
 let onlyFiles: string[] = []
 let skipFiles: string[] = []
-const globalAny: any = global as any
 async function main() {
   const config = await getConfig()
   if (!config.watch) {
@@ -102,23 +101,25 @@ async function runTests(config) {
   const requireKeep = Object.keys(require.cache)
 
   const tezts: any[] = []
-  globalAny.globalBeforeEaches = []
-  globalAny.globalAfterEaches = []
-  globalAny.globalAfterAlls = []
-  globalAny.globalBeforeAlls = []
+  global.globalBeforeEaches = []
+  global.globalAfterEaches = []
+  global.globalAfterAlls = []
+  global.globalBeforeAlls = []
+  const curTezt = global.$$tezt
   if (config.dom) {
     await emulateDom()
   }
+  global.$$tezt = curTezt
   for (const file of allTestFiles) {
-    globalAny.only = () => {
+    global.only = () => {
       onlyFiles.push(file)
     }
-    globalAny.skip = () => {
+    global.skip = () => {
       skipFiles.push(file)
     }
     // @ts-ignore
     singletonReset()
-    globalAny.$$tezt.file = file
+    global.$$tezt.file = file
     if (config.fns) {
       const { test } = await import(path.resolve(process.cwd(), file))
       if (typeof test === "function") {
@@ -127,11 +128,11 @@ async function runTests(config) {
     } else {
       await import(path.resolve(process.cwd(), file))
     }
-    tezts.push(globalAny.$$tezt)
+    tezts.push(global.$$tezt)
   }
 
   const compositeStats: any[] = []
-  for (const fn of globalAny.globalBeforeAlls) {
+  for (const fn of global.globalBeforeAlls) {
     await fn()
   }
   for (const tezt of tezts) {
@@ -155,7 +156,7 @@ async function runTests(config) {
     compositeStats.push(stats)
     console.log()
   }
-  for (const fn of globalAny.globalAfterAlls) {
+  for (const fn of global.globalAfterAlls) {
     await fn()
   }
   if (compositeStats.length === 0) {
