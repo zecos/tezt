@@ -1,6 +1,6 @@
-## Tezt
+![Tezt](assets/tezt.png)
 
-### Testing made "ez"
+### Eazy Testing
 
 **Note: this is still in beta, and the api is likely to change**
 
