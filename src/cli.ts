@@ -127,6 +127,7 @@ async function runTests(config) {
       }
     } else {
       await import(path.resolve(process.cwd(), file))
+      console.log(global.$$tezt)
     }
     tezts.push(global.$$tezt)
   }

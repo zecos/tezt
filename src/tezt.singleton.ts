@@ -23,34 +23,32 @@ export const reset = (!IS_TEST && noop) || (() => _global.$$tezt = tezt = new Te
 if (!_global.$$tezt) {
   reset()
 } else {
-  console.log("tezt was found")
-  tezt = _global.$$tezt
 }
 
 export const test:any = (!IS_TEST && noop) || _global.it || _global.test || (() => {
-  const fn = (...args) => tezt.test(...args)
-  fn.skip = (...args) => tezt.test.skip(...args)
-  fn.only = (...args) => tezt.test.only(...args)
+  const fn = (...args) => _global.$$tezt.test(...args)
+  fn.skip = (...args) => _global.$$tezt.test.skip(...args)
+  fn.only = (...args) => _global.$$tezt.test.only(...args)
   return fn
 })()
 
 export const describe:any = (!IS_TEST && noop) || _global.describe || (() => {
-  const fn = (...args) => tezt.describe(...args)
-  fn.skip = (...args) => tezt.describe.skip(...args)
-  fn.only = (...args) => tezt.describe.only(...args)
+  const fn = (...args) => _global.$$tezt.describe(...args)
+  fn.skip = (...args) => _global.$$tezt.describe.skip(...args)
+  fn.only = (...args) => _global.$$tezt.describe.only(...args)
   return fn
 })()
 
-export const before = (!IS_TEST && noop) || _global.before || _global.beforeAll || ((...args) => tezt.before(...args))
-export const beforeEach = (!IS_TEST && noop) || _global.beforeEach || ((...args) => tezt.beforeEach(...args))
+export const before = (!IS_TEST && noop) || _global.before || _global.beforeAll || ((...args) => _global.$$tezt.before(...args))
+export const beforeEach = (!IS_TEST && noop) || _global.beforeEach || ((...args) => _global.$$tezt.beforeEach(...args))
 export const globalBeforeEach = (!IS_TEST && noop) || (fn => _global.globalBeforeEaches.push(fn))
-export const beforeAll = _global.beforeAll || ((...args) => tezt.beforeAll(...args))
+export const beforeAll = _global.beforeAll || ((...args) => _global.$$tezt.beforeAll(...args))
 export const globalBeforeAll = (!IS_TEST && noop) || (fn => _global.globalBeforeAlls.push(fn))
 
-export const after =  (!IS_TEST && noop) || _global.after || _global.afterAll || ((...args) => tezt.after(...args))
-export const afterEach = (!IS_TEST && noop) || _global.afterEach || ((...args) => tezt.afterEach(...args))
+export const after =  (!IS_TEST && noop) || _global.after || _global.afterAll || ((...args) => _global.$$tezt.after(...args))
+export const afterEach = (!IS_TEST && noop) || _global.afterEach || ((...args) => _global.$$tezt.afterEach(...args))
 export const globalAfterEach = (!IS_TEST && noop) || (fn => _global.globalAfterEaches.push(fn))
-export const afterAll = (!IS_TEST && noop) || _global.afterAll || ((...args) => tezt.afterAll(...args))
+export const afterAll = (!IS_TEST && noop) || _global.afterAll || ((...args) => _global.$$tezt.afterAll(...args))
 export const globalAfterAll = fn => _global.globalAfterAlls.push(fn)
 
 export const only = (!IS_TEST && noop) || (() => {
