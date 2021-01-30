@@ -1,4 +1,5 @@
 ![Tezt](assets/tezt.png)
+
 **Easy Tests**
 
 *Note: this is still in beta, and the api is likely to change*
