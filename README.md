@@ -1,6 +1,6 @@
 ![Tezt](assets/tezt.png)
 
-### Eazy Testing
+### Easy Testing
 
 **Note: this is still in beta, and the api is likely to change**
 

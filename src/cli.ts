@@ -135,7 +135,6 @@ async function runTests(config) {
     await fn()
   }
   for (const tezt of tezts) {
-    log(tezt.file)
     if (skipFiles.includes(tezt.file)) {
       log(`Skipping: ${tezt.file}`)
       continue
