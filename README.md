@@ -1,8 +1,8 @@
 ![Tezt](assets/tezt.png)
 
-### Easy Testing
+Easy Tests
 
-**Note: this is still in beta, and the api is likely to change**
+*Note: this is still in beta, and the api is likely to change*
 
 This is a minimalistic testing library that doesn't usurp control of your node process.
 
