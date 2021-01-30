@@ -8,6 +8,7 @@ Error.prepareStackTrace = (...args) => {
 }
 
 const noop = () => {}
+console.log("getting singleton")
 
 const IN_NODE = typeof window === "undefined"
 const IS_TEST = process.env.NODE_ENV === "test"
@@ -21,8 +22,10 @@ _global.globalBeforeAlls = _global.globalBeforeAlls || []
 let tezt;
 export const reset = (!IS_TEST && noop) || (() => _global.$$tezt = tezt = new Tezt)
 if (!_global.$$tezt) {
+  console.log("tezt was not found")
   reset()
 } else {
+  console.log("tezt was found")
   tezt = _global.$$tezt
 }
 
