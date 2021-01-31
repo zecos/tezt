@@ -19,6 +19,7 @@ const tsNodeString =`"ts-node": {
     "modules": "commonjs"
   }
 }`
+const _global:any = typeof window === "undefined" ? global : window
 
 const log = console.log
 process.env.TEZT = "cli"
@@ -105,6 +106,7 @@ async function runTests(config) {
   global.globalAfterEaches = []
   global.globalAfterAlls = []
   global.globalBeforeAlls = []
+  const resetGlobal = saveGlobal()
   const curTezt = global.$$tezt
   if (config.dom) {
     await emulateDom()
@@ -171,6 +173,7 @@ async function runTests(config) {
   skipFiles = []
   // @ts-ignore
   singletonReset()
+  resetGlobal()
   if(config.watch) {
     resetRequire(requireKeep)
   }
@@ -244,4 +247,13 @@ const emulateDom = async () => {
     clearTimeout(id);
   };
   copyProps(window, global);
+}
+
+const saveGlobal = () => {
+  const keys = Object.keys(_global)
+  return () => {
+    for (const key of keys) {
+      delete _global[key]
+    }
+  }
 }
