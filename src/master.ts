@@ -38,7 +38,6 @@ export const run = async () => {
             await runTests({workers, config})
           } catch (err) {
             console.error('There was an error starting the tests.')
-            console.error(err)
           }
           running = false
         }, 500)

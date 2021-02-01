@@ -11,10 +11,18 @@ import 'ignore-styles'
 //   log(new Error)
 //   log(...args)
 // }
+const error = console.error
 
-process.on('uncaughtException', (error) => {
-  console.error("There was an uncaught exception")
-  console.error(error)
+process.on('uncaughtException', (err) => {
+  error("There was an uncaught exception")
+  error("It might be from an unresolved promise.")
+  error(err)
+  process.exit(1)
+})
+
+process.on('unhandledRejection', (err) => {
+  error("There was an unhandled rejection")
+  error(err)
   process.exit(1)
 })
 

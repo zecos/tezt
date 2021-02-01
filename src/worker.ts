@@ -4,7 +4,6 @@ import { outputCompositeResults, outputResults } from './output';
 import path from 'path'
 import fetch from 'node-fetch'
 import { READY, RUN, TERMINATE } from './msg';
-import { createNoSubstitutionTemplateLiteral } from 'typescript';
 
 const log = console.log
 let onlyFiles: string[] = []
@@ -57,6 +56,7 @@ export const run = async ({config, testFiles}) => {
     // @ts-ignore
     singletonReset()
     global.$$teztSingleton.file = file
+
     if (config.fns) {
       const { test } = await import(path.resolve(process.cwd(), file))
       if (typeof test === "function") {
