@@ -48,6 +48,7 @@ export async function getConfig() {
     await init(config)
     process.exit()
   }
+  await checkConfig(config)
 
   return config
 }
@@ -159,3 +160,52 @@ async function getProjectRoot() {
     curPath = path.resolve(curPath, '..')
   }
 }
+
+
+
+const checkConfig = async (config) => {
+  const tsNodeString =`"ts-node": {
+    "compilerOptions": {
+      "modules": "commonjs"
+    }
+  }`
+  if (!config.root) {
+    console.error('You must run this from within a node project (with a package.json)')
+    process.exit(1)
+  }
+  if (!fs.existsSync(config.root)) {
+    console.error(`Project root, ${config.root}, does not exist.`)
+    process.exit(1)
+  }
+  if (!fs.existsSync(path.resolve(config.root, 'package.json'))) {
+    console.warn(`package.json not found in ${config.root}`)
+  }
+  if (!fs.existsSync(path.resolve(config.root, 'node_modules', 'tezt'))) {
+    console.error(`Local tezt package not found. Please install:`)
+    let yarnCwdArg = ''
+    if (config.root !== process.cwd()) {
+      yarnCwdArg = '--cwd ' + config.root
+    }
+    console.log(`yarn add ${yarnCwdArg} --dev tezt`)
+    console.log('or')
+    if (config.root !== process.cwd()) {
+      console.log(`(cd ${config.root} && npm install --save-dev tezt)`)
+    } else {
+      console.log(`npm install --save-dev tezt`)
+    }
+  }
+  if (fs.existsSync(path.resolve(config.root, "tsconfig.json"))) {
+    const tsConfigJson = await import(path.resolve(config.root, "tsconfig.json"))
+    if (tsConfigJson.module && tsConfigJson.module !== "commonjs") {
+      if (!tsConfigJson['ts-node']
+        || !tsConfigJson['compilerOptions']
+        || !tsConfigJson['compilerOptions']['modules']
+        || tsConfigJson['compilerOptions']['modules'] !== 'commonjs') {
+          console.error(`Please set "module" to "commonjs" in your tsconfig.json or `)
+          console.error(`add \n${tsNodeString}\nto your tsconfig.json`)
+          process.exit(1)
+        }
+    }
+  }
+}
+

@@ -3,6 +3,7 @@ import { RunCallbacks, IRunCallbacks } from './RunCallbacks';
 import { monkeyPatchConsole, IConsoleOutput, ILocation, getLocation } from './patch';
 
 const globalAny: any = global
+const log = console.log
 export type TVoidFunc = () => void
 export interface IBlock {
   children: TItem[]
@@ -281,7 +282,13 @@ export class RunOptions implements IRunOptions {
 }
 
 
-export async function run(block: IBlock, inskip = false, depth = 0, options = new RunOptions, name?: string) {
+export async function run(
+    block: IBlock,
+    inskip = false,
+    depth = 0,
+    options = new RunOptions,
+    name?: string
+) {
   const mp = monkeyPatchConsole(options)
   const {
     children,
@@ -323,7 +330,7 @@ export async function run(block: IBlock, inskip = false, depth = 0, options = ne
         if (callbacks.beforeTest) {"./"
           callbacks.beforeTest(item, depth)
         }
-        let destroy, destroyPromiseMp;
+        let destroy;
         try {
           stats.children.push(testStats)
           if ((!item.only) && (containsOnly || inskip || item.skip)) {
