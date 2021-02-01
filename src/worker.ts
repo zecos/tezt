@@ -63,7 +63,6 @@ export const run = async ({config, testFiles}) => {
         await test()
       }
     } else {
-      log(file)
       await import(path.resolve(process.cwd(), file))
     }
     tezts.push(global.$$teztSingleton)
