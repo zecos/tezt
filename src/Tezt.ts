@@ -100,6 +100,8 @@ export class Tezt extends Block implements ITezt {
   file = (global as any).curFile
   beforeAlls = []
   afterAlls = []
+  isRunning = false
+  timeout = 5000
 
 
   constructor() {
@@ -177,11 +179,161 @@ export class Tezt extends Block implements ITezt {
     for (const beforeAll of this.beforeAlls) {
       await beforeAll()
     }
-    const results = await run(this.curBlock)
+    const results = await this.runBlock(this.curBlock)
     for (const afterAll of this.afterAlls) {
       await afterAll()
     }
     return results
+  }
+
+  public runBlock = async (
+      block: IBlock,
+      inskip = false,
+      depth = 0,
+      options = new RunOptions,
+      name?: string
+  ) => {
+    const mp = monkeyPatchConsole(options)
+    const {
+      children,
+      beforeEaches,
+      afterEaches,
+      befores,
+      afters,
+      containsOnly,
+    } = block
+    const {callbacks} = options
+    const stats = new BlockStats(block, depth, name)
+    try {
+      if (containsOnly) {
+        for (const before of befores) {
+          if (callbacks.before) {
+            callbacks.before(block, inskip, depth)
+          }
+          const dispose = mp.setConsoleOutput(stats.beforeOutput)
+          await before()
+          dispose()
+        }
+      }
+      for (const item of children) {
+        if (item instanceof Describe) {
+          const skip = (inskip || (containsOnly && !item.block.containsOnly))
+          const timeStart = +new Date
+          const itemStats = await this.runBlock(item.block, skip, depth+1, options, item.name)
+          const timeEnd = +new Date
+          itemStats.time = timeStart - timeEnd
+          itemStats.wasRun = skip
+          stats.totalRun += itemStats.totalRun
+          stats.passed.push(...itemStats.passed)
+          stats.failed.push(...itemStats.failed)
+          stats.skipped.push(...itemStats.skipped)
+          stats.children.push(itemStats)
+        } else if (item instanceof Test) {
+          const testStats = new TestStats(item)
+          testStats.depth = depth
+          if (callbacks.beforeTest) {"./"
+            callbacks.beforeTest(item, depth)
+          }
+          let destroy;
+          try {
+            stats.children.push(testStats)
+            if ((!item.only) && (containsOnly || inskip || item.skip)) {
+              stats.skipped.push(testStats)
+            testStats.status = TestStatus.Skipped
+              continue
+            }
+            for (const globalBeforeEach of globalAny.globalBeforeEaches) {
+              const destroy = mp.setConsoleOutput(testStats.beforeEachOutput)
+              await globalBeforeEach()
+              destroy()
+            }
+            for (const beforeEach of beforeEaches) {
+              const destroy = mp.setConsoleOutput(testStats.beforeEachOutput)
+              await beforeEach()
+              destroy()
+            }
+            destroy = mp.setConsoleOutput(testStats.output)
+
+            let noTimeout = false
+            let running = item.fn()
+            ;(global as any).$$teztSingleton.isRunning = true
+
+            // in case there are exceptions in callbacks
+            let uncaughtErr;
+            let uncaughtRej;
+            const uncaughtPromise = new Promise((res, rej) => {
+              uncaughtRej = rej
+            })
+            const handleUncaught = err => {
+              console.error(`There was an uncaught exception`)
+              noTimeout = true
+              uncaughtRej(err)
+            }
+            process.on('uncaughtException', handleUncaught)
+            if (isPromise(running)) {
+              await Promise.race([
+                running
+                  .then(()=> {
+                    noTimeout = true
+                  }),
+                timeout(this.timeout),
+                uncaughtPromise,
+              ])
+              if (!noTimeout) {
+                throw new Error(`'${item.name}' timed out.`)
+              }
+            }
+            log('setting no longer running')
+            ;(global as any).$$teztSingleton.isRunning = false
+            process.off('uncaughtException', handleUncaught)
+            if (uncaughtErr) {
+              throw uncaughtErr
+            }
+
+            destroy()
+
+            for (const afterEach of afterEaches) {
+              const destroy = mp.setConsoleOutput(testStats.afterEachOutput)
+              await afterEach()
+              destroy()
+            }
+            for (const globalAfterEach of globalAny.globalAfterEaches) {
+              const destroy = mp.setConsoleOutput(testStats.beforeEachOutput)
+              await globalAfterEach()
+              destroy()
+            }
+            stats.passed.push(item)
+            testStats.status = TestStatus.Passed
+          } catch (err) {
+            // TODO separate errors for afters, befores, and durings
+            // might still want to run "afterEach" even on failure
+            destroy()
+            testStats.error = err
+            stats.failed.push(testStats)
+            testStats.status = TestStatus.Failed
+          }
+          if (callbacks.afterTest) {
+            callbacks.afterTest(testStats, item)
+          }
+          stats.totalRun++
+        }
+      }
+      if (containsOnly) {
+        for (const after of afters) {
+          const destroy = mp.setConsoleOutput(stats.afterOutput)
+          await after()
+          destroy()
+          if (callbacks.after) {
+            callbacks.after(stats)
+          }
+        }
+      }
+    } catch (e) {
+      console.error(e)
+    }
+    mp()
+
+    return stats
   }
 
   public only = () => {
@@ -280,139 +432,6 @@ export class RunOptions implements IRunOptions {
     Object.assign(this, options)
   }
 }
-
-
-export async function run(
-    block: IBlock,
-    inskip = false,
-    depth = 0,
-    options = new RunOptions,
-    name?: string
-) {
-  const mp = monkeyPatchConsole(options)
-  const {
-    children,
-    beforeEaches,
-    afterEaches,
-    befores,
-    afters,
-    containsOnly,
-  } = block
-  const {callbacks} = options
-  const stats = new BlockStats(block, depth, name)
-  try {
-    if (containsOnly) {
-      for (const before of befores) {
-        if (callbacks.before) {
-          callbacks.before(block, inskip, depth)
-        }
-        const dispose = mp.setConsoleOutput(stats.beforeOutput)
-        await before()
-        dispose()
-      }
-    }
-    for (const item of children) {
-      if (item instanceof Describe) {
-        const skip = (inskip || (containsOnly && !item.block.containsOnly))
-        const timeStart = +new Date
-        const itemStats = await run(item.block, skip, depth+1, options, item.name)
-        const timeEnd = +new Date
-        itemStats.time = timeStart - timeEnd
-        itemStats.wasRun = skip
-        stats.totalRun += itemStats.totalRun
-        stats.passed.push(...itemStats.passed)
-        stats.failed.push(...itemStats.failed)
-        stats.skipped.push(...itemStats.skipped)
-        stats.children.push(itemStats)
-      } else if (item instanceof Test) {
-        const testStats = new TestStats(item)
-        testStats.depth = depth
-        if (callbacks.beforeTest) {"./"
-          callbacks.beforeTest(item, depth)
-        }
-        let destroy;
-        try {
-          stats.children.push(testStats)
-          if ((!item.only) && (containsOnly || inskip || item.skip)) {
-            stats.skipped.push(testStats)
-          testStats.status = TestStatus.Skipped
-            continue
-          }
-          for (const globalBeforeEach of globalAny.globalBeforeEaches) {
-            const destroy = mp.setConsoleOutput(testStats.beforeEachOutput)
-            await globalBeforeEach()
-            destroy()
-          }
-          for (const beforeEach of beforeEaches) {
-            const destroy = mp.setConsoleOutput(testStats.beforeEachOutput)
-            await beforeEach()
-            destroy()
-          }
-          destroy = mp.setConsoleOutput(testStats.output)
-
-          let hasResolved = false
-          let running = item.fn()
-          if (isPromise(running)) {
-            await Promise.race([
-              running
-                .then(()=> {
-                  hasResolved = true
-                }),
-              timeout(3000)
-            ])
-            if (!hasResolved) {
-              throw new Error(`'${item.name}' timed out.`)
-            }
-          }
-
-          destroy()
-
-          for (const afterEach of afterEaches) {
-            const destroy = mp.setConsoleOutput(testStats.afterEachOutput)
-            await afterEach()
-            destroy()
-          }
-          for (const globalAfterEach of globalAny.globalAfterEaches) {
-            const destroy = mp.setConsoleOutput(testStats.beforeEachOutput)
-            await globalAfterEach()
-            destroy()
-          }
-          stats.passed.push(item)
-          testStats.status = TestStatus.Passed
-        } catch (err) {
-          // TODO separate errors for afters, befores, and durings
-          // might still want to run "afterEach" even on failure
-          destroy()
-          testStats.error = err
-          stats.failed.push(testStats)
-          testStats.status = TestStatus.Failed
-        }
-        if (callbacks.afterTest) {
-          callbacks.afterTest(testStats, item)
-        }
-        stats.totalRun++
-      }
-    }
-    if (containsOnly) {
-      for (const after of afters) {
-        const destroy = mp.setConsoleOutput(stats.afterOutput)
-        await after()
-        destroy()
-        if (callbacks.after) {
-          callbacks.after(stats)
-        }
-      }
-    }
-  } catch (e) {
-    console.error(e)
-  }
-  mp()
-
-  return stats
-}
-
-
-
 
 const NormalPromise:any = global.Promise
 function timeout(ms) {

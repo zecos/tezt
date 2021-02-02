@@ -12,8 +12,16 @@ import 'ignore-styles'
 //   log(...args)
 // }
 const error = console.error
+const log = console.log
 
+declare var global: any
 process.on('uncaughtException', (err) => {
+  if (cluster.isWorker) {
+    const singleton = global.$$teztSingleton
+    if (singleton && singleton.isRunning) {
+      return
+    }
+  }
   error("There was an uncaught exception")
   error("It might be from an unresolved promise.")
   error(err)

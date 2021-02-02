@@ -42,6 +42,9 @@ export const run = async ({config, testFiles}) => {
   global.globalAfterAlls = []
   global.globalBeforeAlls = []
   const curTezt = global.$$teztSingleton
+  if (typeof config.timeout !== "undefined") {
+    global.$$teztSingleton.timeout = config.timeout
+  }
   if (config.dom) {
     await emulateDom()
   }

@@ -74,6 +74,8 @@ async function init(config) {
   dom: ${config.dom},
   // whether or not to look for an exported "test" function
   fns: ${config.fns},
+  // default timeout for tests
+  timeout: 3000,
 }`)
 }
 
