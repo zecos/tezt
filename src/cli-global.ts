@@ -7,6 +7,7 @@ import { spawn } from 'child_process'
 import ('source-map-support/register')
 import {renderString} from 'termd/src/termd'
 
+
 process.env.NODE_ENV = "test"
 process.env.TEZT = "cli"
 process.env.FORCE_COLOR = process.env.FORCE_COLOR || "1"
@@ -25,7 +26,7 @@ async function main() {
   }
   const config = await getConfig()
   spawn('node', [
-    path.resolve(config.root, 'node_modules', 'tezt', 'dist', 'src', 'run.js'),
+    path.resolve(config.root, 'node_modules', 'tezt', 'dist', 'src', 'cli.js'),
     ...process.argv.slice(2)],
     {
       stdio: 'inherit',
