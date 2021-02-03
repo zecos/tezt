@@ -2,8 +2,6 @@ import uuid from 'uuid/v4'
 import { RunCallbacks, IRunCallbacks } from './RunCallbacks';
 import { monkeyPatchConsole, IConsoleOutput, ILocation, getLocation } from './patch';
 
-// TODO: abstract the whole functionality of monkeypatching console, handling uncaught errors, etc.
-
 const globalAny: any = global
 const log = console.log
 export type TVoidFunc = () => void
@@ -285,6 +283,7 @@ export class Tezt extends Block implements ITezt {
                 throw new Error(`'${item.name}' timed out.`)
               }
             }
+            log('setting no longer running')
             ;(global as any).$$teztSingleton.isRunning = false
             process.off('uncaughtException', handleUncaught)
             if (uncaughtErr) {
@@ -441,8 +440,4 @@ function timeout(ms) {
 
 function isPromise(p) {
   return p && Object.prototype.toString.call(p) === "[object Promise]";
-}
-
-const runInIsolation = async () => {
-
 }
