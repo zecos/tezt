@@ -450,6 +450,11 @@ async function trapRun(fn: (...args) => any, options: ITrapOptions) {
         throw new Error(`'${options.name || 'function'}' timed out.`)
       }
     }
+    // wait for unresolved promises, just in case
+    await Promise.race([
+      uncaughtPromise,
+      promisify(setTimeout)(3),
+    ])
     ;(global as any).$$teztSingleton.isRunning = false
     if (uncaughtErr) {
       throw uncaughtErr
