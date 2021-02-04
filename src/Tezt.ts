@@ -33,6 +33,8 @@ export interface IItem {
   location: ILocation
   skip: boolean
   only: boolean
+  timeout?: number
+  gracePeriod?: number
 }
 
 export class Item implements IItem {
@@ -57,6 +59,8 @@ export interface ITest extends IItem {
   fn: TVoidFunc
 }
 export class Test extends Item implements ITest {
+  public timeout = undefined
+  public gracePeriod = undefined
   constructor(public name, public fn) {
     super(name)
   }
@@ -87,6 +91,8 @@ export interface ITezt extends Block {
   inOnly: boolean
   name: string
   file: string
+  timeout: number
+  gracePeriod: number
 }
 
 export class Tezt extends Block implements ITezt {
@@ -103,6 +109,7 @@ export class Tezt extends Block implements ITezt {
   afterAlls = []
   isRunning = false
   timeout = 5000
+  gracePeriod = 5
 
 
   constructor() {
@@ -112,7 +119,7 @@ export class Tezt extends Block implements ITezt {
   }
 
   public test = (() => {
-    const test = (name, fn) => {
+    const test = (name, fn, options:any = {}) => {
       if (typeof name !== "string") {
         throw new Error("The first argument to `test` must be a string, got " + name)
       }
@@ -122,6 +129,9 @@ export class Tezt extends Block implements ITezt {
       }
       this.curBlock.totalTests++
       const test = new Test(name, fn)
+      if (options.timeout) {
+        test.timeout = options.timeout
+      }
       this.curBlock.children.push(test)
       if (this.inOnly) {
         for (const ancestor of this.curAncestors){
@@ -249,7 +259,8 @@ export class Tezt extends Block implements ITezt {
                   output: testStats[`${name}Output`],
                   name: `${item.name}.beforeEach`,
                   timeout: this.timeout,
-                  outputToConsole: options.outputToConsole
+                  outputToConsole: options.outputToConsole,
+                  gracePeriod: this.gracePeriod,
                 })
                 if (err) {
                   throw err
@@ -264,7 +275,8 @@ export class Tezt extends Block implements ITezt {
               output: testStats.output,
               name: item.name,
               timeout: this.timeout,
-              outputToConsole: options.outputToConsole
+              outputToConsole: options.outputToConsole,
+              gracePeriod: this.gracePeriod,
             })
             if (err) {
               throw err
@@ -417,6 +429,7 @@ interface ITrapOptions {
   name: string
   outputToConsole: boolean
   timeout: number
+  gracePeriod: number
   output: IConsoleOutput[]
 }
 
@@ -446,7 +459,7 @@ async function trapRun(fn: (...args) => any, options: ITrapOptions) {
           .then(()=> {
             noTimeout = true
           }),
-        timeout(options.timeout),
+        timeout(options.timeout || 5000),
         uncaughtPromise,
       ])
       if (!noTimeout) {
@@ -456,7 +469,7 @@ async function trapRun(fn: (...args) => any, options: ITrapOptions) {
     // wait for unresolved promises, just in case
     await Promise.race([
       uncaughtPromise,
-      promisify(setTimeout)(3),
+      promisify(setTimeout)(options.gracePeriod || 3),
     ])
     ;(global as any).$$teztSingleton.isRunning = false
     if (uncaughtErr) {

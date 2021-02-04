@@ -36,15 +36,13 @@ export const run = async ({config, testFiles}) => {
   if (config.setup) {
     await import(path.resolve(config.root, config.setup))
   }
+  const curTezt = global.$$teztSingleton
   const tezts: any[] = []
   global.globalBeforeEaches = []
   global.globalAfterEaches = []
   global.globalAfterAlls = []
   global.globalBeforeAlls = []
-  const curTezt = global.$$teztSingleton
-  if (typeof config.timeout !== "undefined") {
-    global.$$teztSingleton.timeout = config.timeout
-  }
+
   if (config.dom) {
     await emulateDom()
   }
@@ -58,7 +56,11 @@ export const run = async ({config, testFiles}) => {
     }
     // @ts-ignore
     singletonReset()
-    global.$$teztSingleton.file = file
+    Object.assign(global.$$teztSingleton, {
+      file,
+      timeout: config.timeout,
+      gracePeriod: config.gracePeriod
+    })
 
     if (config.fns) {
       const { test } = await import(path.resolve(process.cwd(), file))

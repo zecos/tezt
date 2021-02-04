@@ -19,6 +19,10 @@ const baseDefault = {
   dom: false,
   // whether or not to look for an exported "test" function
   fns: true,
+  // default timeout for tests
+  timeout: 5000,
+  // default time to wait after test is complete for asynchronous errors
+  gracePeriod: 5,
 }
 
 export async function getConfig() {
@@ -75,7 +79,9 @@ async function init(config) {
   // whether or not to look for an exported "test" function
   fns: ${config.fns},
   // default timeout for tests
-  timeout: 3000,
+  timeout: ${config.timeout},
+  // default time to wait after test is complete for asynchronous errors
+  gracePeriod: ${config.gracePeriod},
 }`)
 }
 

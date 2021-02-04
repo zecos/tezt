@@ -7,7 +7,6 @@ import { spawn } from 'child_process'
 import ('source-map-support/register')
 import {renderString} from 'termd/src/termd'
 
-
 process.env.NODE_ENV = "test"
 process.env.TEZT = "cli"
 process.env.FORCE_COLOR = process.env.FORCE_COLOR || "1"
