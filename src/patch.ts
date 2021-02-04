@@ -116,17 +116,17 @@ export function getLocation(matchLine): ILocation {
     lineno,
   }
 }
-// let allPromises: any[] = []
-// const NormalPromise:any = global.Promise
-// function monkeyPatchPromise() {
-//   ;(global as any).Promise = class Promise extends NormalPromise {
-//     constructor(...props) {
-//       super(...props)
-//       allPromises.push(this)
-//     }
-//   }
-//   return () => {
-//     ;(global as any).Promise = NormalPromise
-//     allPromises = []
-//   }
-// }
+let allPromises: any[] = []
+const NormalPromise:any = global.Promise
+function monkeyPatchPromise() {
+  ;(global as any).Promise = class Promise extends NormalPromise {
+    constructor(...props) {
+      super(...props)
+      allPromises.push(this)
+    }
+  }
+  return () => {
+    ;(global as any).Promise = NormalPromise
+    allPromises = []
+  }
+}

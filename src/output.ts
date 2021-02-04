@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import path from 'path'
 
-import { TestStatus, ITrapData } from './Tezt';
+import { TestStatus } from './Tezt';
 import { ConsoleOutputType } from './patch'
 
 export function outputResults (stats) {
@@ -14,7 +14,6 @@ export function outputResults (stats) {
   const totalMsg = `${totalTests} total`
   console.log()
   console.log(`Tests: ${failedMsg}, ${skippedMsg}, ${passedMsg}, ${totalMsg}, ${totalRun} run`)
-  const failedAuxiliary = getFailedAuxiliary(stats)
   failed.forEach(stats => {
     const {location, name} = stats.item
     const relativepath = path.relative(process.cwd(), location.filepath)
@@ -35,7 +34,7 @@ const precursors = {
 
 function outputContent(stats) {
   const {depth} = stats
-  logoutputs(stats.beforeTrap.output, depth)
+  logoutputs(stats.beforeOutput, depth)
   for (const itemStats of stats.children) {
     if (itemStats.type === "block") {
       const indentation = "  ".repeat(depth)
@@ -50,18 +49,32 @@ function outputContent(stats) {
       const relativepath = path.relative(process.cwd(), location.filepath)
       const locationinfo = chalk.dim(`  (./${relativepath}:${location.lineno})`)
       console.log(`${indentation}${precursor}${name}${locationinfo}`)
-      logoutputs(itemStats.globalBeforeEachTrap, depth+1)
-      logoutputs(itemStats.beforeEachTrap, depth+1)
-      logoutputs(itemStats.trap, depth+1)
-      logoutputs(itemStats.afterEachTrap, depth+1)
-      logoutputs(itemStats.globalAfterEachTrap, depth+1)
+      logoutputs(itemStats.beforeEachOutput, depth+1)
+      logoutputs(itemStats.output, depth+1)
+      logoutputs(itemStats.afterEachOutput, depth+1)
     }
   }
-  logoutputs(stats.afterTrap.output, depth)
+  logoutputs(stats.afterOutput, depth)
 }
 
 
 
+function logoutputs(outputs, depth) {
+  const indentation = "  ".repeat(depth)
+  for (const output of outputs) {
+    const { location, type, message } = output
+    const relativepath = path.relative(process.cwd(), location.filepath)
+    const locationinfo = `  (./${relativepath}:${location.lineno})`
+    const formattedOutput = `${indentation}${message.join(" ")}${locationinfo}`
+    if (type === ConsoleOutputType.Warn) {
+      console.log(chalk.yellow.dim(formattedOutput))
+    } else if (output.type === ConsoleOutputType.Error) {
+      console.log(chalk.red.dim(formattedOutput))
+    } else if (output.type === ConsoleOutputType.Log) {
+      console.log(chalk.dim(formattedOutput))
+    }
+  }
+}
 
 
 export function outputCompositeResults(compositeStats) {
@@ -82,40 +95,4 @@ export function outputCompositeResults(compositeStats) {
   const totalMsg = `${totalTests} total`
   console.log()
   console.log(`Composite Results: ${failedMsg}, ${skippedMsg}, ${passedMsg}, ${totalMsg}`)
-}
-
-function getFailedAuxiliary(stats) {
-  let errors = []
-  if (stats.beforeTrap.error) {
-    errors.push(stats.beforeTrap)
-  }
-  for (const itemStats of stats.children) {
-    if (itemStats.type === "block") {
-      errors = errors.concat(getFailedAuxiliary(itemStats))
-    } else if (itemStats.type === "test") {
-      errors.push(itemStats.trap)
-      errors.push(itemStats.globalBeforeEachTrap.trap)
-      errors.push(itemStats.beforeEachTrap.trap)
-      errors.push(itemStats.afterEachTrap.trap)
-      errors.push(itemStats.globalAfterEachTrap.trap)
-    }
-  }
-  logoutputs(stats.afterTrap)
-}
-
-function logoutputs(trapData: ITrapData, depth=0) {
-  const indentation = "  ".repeat(depth)
-  for (const output of trapData.output) {
-    const { location, type, message } = output
-    const relativepath = path.relative(process.cwd(), location.filepath)
-    const locationinfo = `  (./${relativepath}:${location.lineno})`
-    const formattedOutput = `${indentation}${message.join(" ")}${locationinfo}`
-    if (type === ConsoleOutputType.Warn) {
-      console.log(chalk.yellow.dim(formattedOutput))
-    } else if (output.type === ConsoleOutputType.Error) {
-      console.log(chalk.red.dim(formattedOutput))
-    } else if (output.type === ConsoleOutputType.Log) {
-      console.log(chalk.dim(formattedOutput))
-    }
-  }
 }

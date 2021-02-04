@@ -84,7 +84,9 @@ describe('I can describe a group of tests', () => {
 
   test.only('this is the only test that will be run aside from the describe.only tests', () => {
     throw new Error('This error will be thrown, but the rest of the tests will still run')
-  })setting no longer't be run, because it didn't specify only`, () => {
+  })
+
+  test(`this test won't be run, because it didn't specify only`, () => {
     console.log('this is not run')
   })
 
@@ -252,5 +254,4 @@ to `react-app-env.d.ts`
 
 * add snapshotting
 * should be able to run global tezt from a parent directory, and it run tezt on all sub directories that have tezt installed
-* note: this will require removing duplicates...so if there's a duplicate
-* Monkey patch all
+  * note: this will require removing duplicates...so if there's a duplicate
