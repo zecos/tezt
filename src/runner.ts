@@ -3,34 +3,62 @@ import { reset as singletonReset } from './tezt.singleton'
 import { outputCompositeResults, outputResults } from './output';
 import path from 'path'
 import fetch from 'node-fetch'
-import { READY, RUN, TERMINATE } from './msg';
+import { READY, RUN } from './msg';
+import ipc from 'node-ipc';
+import 'ts-node/register'
+import 'source-map-support/register'
+import 'ignore-styles'
 
+const error = console.error
 const log = console.log
+
+process.on('uncaughtException', (err) => {
+  const singleton = global.$$teztSingleton
+  if (singleton && singleton.isRunning) {
+    return
+  }
+  error("There was an uncaught exception")
+  error("It might be from an unresolved promise.")
+  error(err)
+  process.exit(1)
+})
+
+process.on('unhandledRejection', (err) => {
+  error("There was an unhandled rejection")
+  error(err)
+  process.exit(1)
+})
+
 let onlyFiles: string[] = []
 let skipFiles: string[] = []
 
-export const runWorker = () => (new Promise<void>((res, rej) => {
-  process.send({type: READY})
-  process.on('message', async (msg) => {
-    if (msg.type === TERMINATE) {
-      process.on('beforeExit', async () => {
-        // in case they've put clean up in globalAfterAll
-        for (const globalAfterAll of global.globalAfterAlls) {
-          await globalAfterAll()
-        }
+ipc.config.silent = true
+
+export const main = async () =>  {
+  ipc.connectTo('tezt-master', () => {
+    const master = ipc.of['tezt-master']
+    master
+      .on('connect', () => {
+        master.emit('tezt.message', {
+            type: READY,
+            pid: process.pid,
+          })
       })
-      process.exit()
-    } else if (msg.type === RUN) {
-      try {
-        await run(msg)
-        process.exit()
-      } catch (err) {
-        console.error(err)
-        process.exit(1)
+    master.on('tezt.message', async (msg, socket) => {
+      if (msg.type === RUN) {
+        try {
+          await run(msg)
+          process.exit()
+        } catch (err) {
+          console.error(err)
+          process.exit(1)
+        }
+      } else {
+        console.log(`Could not find msg type ${msg.type}`)
       }
-    }
+    })
   })
-}))
+}
 
 export const run = async ({config, testFiles}) => {
   if (config.setup) {
@@ -66,6 +94,7 @@ export const run = async ({config, testFiles}) => {
         await test()
       }
     } else {
+      await import('source-map-support/register')
       await import(path.resolve(process.cwd(), file))
     }
     tezts.push(global.$$teztSingleton)
@@ -140,3 +169,5 @@ const emulateDom = async () => {
   };
   copyProps(window, global);
 }
+
+main().catch(console.error)
