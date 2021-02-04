@@ -231,83 +231,51 @@ export class Tezt extends Block implements ITezt {
         } else if (item instanceof Test) {
           const testStats = new TestStats(item)
           testStats.depth = depth
-          if (callbacks.beforeTest) {"./"
+          if (callbacks.beforeTest) {
             callbacks.beforeTest(item, depth)
           }
-          let destroy;
           try {
             stats.children.push(testStats)
             if ((!item.only) && (containsOnly || inskip || item.skip)) {
               stats.skipped.push(testStats)
-            testStats.status = TestStatus.Skipped
+              testStats.status = TestStatus.Skipped
               continue
             }
-            for (const globalBeforeEach of globalAny.globalBeforeEaches) {
-              const destroy = mp.setConsoleOutput(testStats.beforeEachOutput)
-              await globalBeforeEach()
-              destroy()
-            }
-            for (const beforeEach of beforeEaches) {
-              const destroy = mp.setConsoleOutput(testStats.beforeEachOutput)
-              await beforeEach()
-              destroy()
-            }
-            destroy = mp.setConsoleOutput(testStats.output)
-
-            let noTimeout = false
-            let running = item.fn()
-            ;(global as any).$$teztSingleton.isRunning = true
-
-            // in case there are exceptions in callbacks
-            let uncaughtErr;
-            let uncaughtRej;
-            const uncaughtPromise = new Promise((res, rej) => {
-              uncaughtRej = rej
-            })
-            const handleUncaught = err => {
-              console.error(`There was an uncaught exception`)
-              noTimeout = true
-              uncaughtRej(err)
-            }
-            process.on('uncaughtException', handleUncaught)
-            if (isPromise(running)) {
-              await Promise.race([
-                running
-                  .then(()=> {
-                    noTimeout = true
-                  }),
-                timeout(this.timeout),
-                uncaughtPromise,
-              ])
-              if (!noTimeout) {
-                throw new Error(`'${item.name}' timed out.`)
+            const runMulti = async (fns, name) => {
+              for (const fn of fns) {
+                const err = await trapRun(fn, {
+                  output: testStats[`${name}Output`],
+                  name: `${item.name}.beforeEach`,
+                  timeout: this.timeout,
+                  outputToConsole: options.outputToConsole
+                })
+                if (err) {
+                  throw err
+                }
               }
             }
-            log('setting no longer running')
-            ;(global as any).$$teztSingleton.isRunning = false
-            process.off('uncaughtException', handleUncaught)
-            if (uncaughtErr) {
-              throw uncaughtErr
+
+            await runMulti(globalAny.globalBeforeEaches, 'globalBeforeEach')
+            await runMulti(beforeEaches, 'beforeEach')
+
+            const err = await trapRun(item.fn, {
+              output: testStats.output,
+              name: item.name,
+              timeout: this.timeout,
+              outputToConsole: options.outputToConsole
+            })
+            if (err) {
+              throw err
             }
 
-            destroy()
+            await runMulti(afterEaches, 'afterEach')
+            await runMulti(globalAny.globalAfterEaches, 'globalAfterEach')
 
-            for (const afterEach of afterEaches) {
-              const destroy = mp.setConsoleOutput(testStats.afterEachOutput)
-              await afterEach()
-              destroy()
-            }
-            for (const globalAfterEach of globalAny.globalAfterEaches) {
-              const destroy = mp.setConsoleOutput(testStats.beforeEachOutput)
-              await globalAfterEach()
-              destroy()
-            }
             stats.passed.push(item)
             testStats.status = TestStatus.Passed
           } catch (err) {
             // TODO separate errors for afters, befores, and durings
             // might still want to run "afterEach" even on failure
-            destroy()
             testStats.error = err
             stats.failed.push(testStats)
             testStats.status = TestStatus.Failed
@@ -422,12 +390,12 @@ export class BlockStats implements IBlockStats {
 
 export interface IRunOptions {
   callbacks: IRunCallbacks
-  outputConsole: boolean
+  outputToConsole: boolean
 }
 
 export class RunOptions implements IRunOptions {
   public callbacks = new RunCallbacks
-  public outputConsole = false
+  public outputToConsole = false
   constructor(options = {}) {
     Object.assign(this, options)
   }
@@ -440,4 +408,53 @@ function timeout(ms) {
 
 function isPromise(p) {
   return p && Object.prototype.toString.call(p) === "[object Promise]";
+}
+
+interface ITrapOptions {
+  name: string
+  outputToConsole: boolean
+  timeout: number
+  output: IConsoleOutput[]
+}
+
+async function trapRun(fn: (...args) => any, options: ITrapOptions) {
+  let err = null
+  try {
+    let noTimeout = false
+    let running = fn()
+    ;(global as any).$$teztSingleton.isRunning = true
+    // in case there are exceptions in callbacks
+    let uncaughtErr, uncaughtRej;
+    const uncaughtPromise = new Promise((res, rej) => {
+      uncaughtRej = rej
+    })
+    const handleUncaught = err => {
+      console.error(`There was an uncaught exception`)
+      noTimeout = true
+      uncaughtRej(err)
+    }
+    process.on('uncaughtException', handleUncaught)
+    if (isPromise(running)) {
+      await Promise.race([
+        running
+          .then(()=> {
+            noTimeout = true
+          }),
+        timeout(options.timeout),
+        uncaughtPromise,
+      ])
+      if (!noTimeout) {
+        throw new Error(`'${options.name || 'function'}' timed out.`)
+      }
+    }
+    ;(global as any).$$teztSingleton.isRunning = false
+    process.off('uncaughtException', handleUncaught)
+    if (uncaughtErr) {
+      throw uncaughtErr
+    }
+  } catch (_err) {
+    err = _err
+  } finally {
+    return err
+  }
 }

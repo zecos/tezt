@@ -31,19 +31,19 @@ export function monkeyPatchConsole(options) {
   let onConsoleError = noop
   console.log = (...args) => {
     onConsoleLog(...args)
-    if (options.outputConsole) {
+    if (options.outputToConsole) {
       prevConsoleLog(...args)
     }
   }
   console.warn = (...args) => {
     onConsoleWarn(...args)
-    if (options.outputConsole) {
+    if (options.outputToConsole) {
       prevConsoleWarn(...args)
     }
   }
   console.error = (...args) => {
     onConsoleError(...args)
-    if (options.outputConsole) {
+    if (options.outputToConsole) {
       prevConsoleError(...args)
     }
   }
