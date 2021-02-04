@@ -16,7 +16,6 @@ const log = console.log
 
 declare var global: any
 process.on('uncaughtException', (err) => {
-  log('uncaught exception right here')
   if (cluster.isWorker) {
     const singleton = global.$$teztSingleton
     if (singleton && singleton.isRunning) {
@@ -30,7 +29,6 @@ process.on('uncaughtException', (err) => {
 })
 
 process.on('unhandledRejection', (err) => {
-  log('uncaught rejection')
   error("There was an unhandled rejection")
   error(err)
   process.exit(1)
