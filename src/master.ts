@@ -1,44 +1,28 @@
 import fs from 'fs-extra'
 import path from 'path'
 import glob from 'glob-promise'
-import { RUN } from './msg'
 import chalk from 'chalk'
 import {getConfig} from './config'
 import chokidar from 'chokidar'
 import os from 'os'
-import { genRunners } from './runners'
-import 'source-map-support/register'
-import 'ts-node/register'
-import ipc from 'node-ipc'
+import { genWorkers } from './workers'
+import { RUN } from './msg'
 
-process.on('uncaughtException', (err) => {
-  console.error('uncaught exception')
-  console.error(err)
-  process.exit(1)
-})
-process.on('unhandledRejection', (err) => {
-  console.error('uncaught rejection')
-  console.error(err)
-  process.exit(1)
-})
+const MAX_WORKERS = 4
 
-const MAX_RUNNERS = 4
+const log = console.log
 
-process.env.TEZT = "cli"
-process.env.FORCE_COLOR = process.env.FORCE_COLOR || "1"
-process.env.NODE_ENV="test"
-const { log } = console
-async function main() {
+export const run = async () => {
   const config = await getConfig()
 
   if (!config.watch) {
-    const getRunner = await genRunners(1)
-    await runTests({getRunner, config})
+    const workers = genWorkers(1)
+    await runTests({workers, config})
     process.exit()
   }
   const numCPUs = os.cpus().length
-  const numRunners = Math.min(numCPUs, MAX_RUNNERS)
-  const getRunner = await genRunners(numRunners)
+  const numWorkers = Math.max(numCPUs, MAX_WORKERS)
+  const workers = genWorkers(numWorkers)
 
   let running = false
   chokidar
@@ -51,7 +35,7 @@ async function main() {
         running = true
         setTimeout(async () => {
           try {
-            await runTests({getRunner, config})
+            await runTests({workers, config})
           } catch (err) {
             console.error('There was an error starting the tests.')
           }
@@ -64,28 +48,21 @@ async function main() {
     })
 }
 
-main().catch(console.error)
-
-async function runTests({config, getRunner}) {
-  const runner = await getRunner()
-  const {subprocess, socket} = runner
+async function runTests({config, workers}) {
+  const worker = await workers.next().value
   const testFiles = await getAllTestFiles(config)
-  ipc.server.emit(
-    socket,
-    'tezt.message',
-    {
-      type: RUN,
-      config,
-      testFiles,
-    }
-  )
+  worker.send({
+    type: RUN,
+    config,
+    testFiles,
+  })
   await new Promise((res, rej) => {
-    subprocess.on('exit', (code, signal) => {
+    worker.on('exit', (code, signal) => {
       if (signal) {
-        return res(`Runner was killed by signal: ${signal}`)
+        return res(`Worker was killed by signal: ${signal}`)
       }
       if (code !== 0) {
-        return rej(`Runner exited with code: ${code}`)
+        return rej(`Worker exited with code: ${code}`)
       }
       return res('Success')
     })
