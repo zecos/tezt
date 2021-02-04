@@ -29,6 +29,7 @@ process.on('uncaughtException', (err) => {
 })
 
 process.on('unhandledRejection', (err) => {
+  log('uncaught exception')
   error("There was an unhandled rejection")
   error(err)
   process.exit(1)

@@ -1,9 +1,10 @@
 import uuid from 'uuid/v4'
 import { RunCallbacks, IRunCallbacks } from './RunCallbacks';
 import { monkeyPatchConsole, IConsoleOutput, ILocation, getLocation } from './patch';
+import { promisify } from 'util';
 
 const globalAny: any = global
-const log = console.log
+const {log, error} = console
 export type TVoidFunc = () => void
 export interface IBlock {
   children: TItem[]
@@ -215,6 +216,7 @@ export class Tezt extends Block implements ITezt {
           dispose()
         }
       }
+
       for (const item of children) {
         if (item instanceof Describe) {
           const skip = (inskip || (containsOnly && !item.block.containsOnly))
@@ -297,7 +299,7 @@ export class Tezt extends Block implements ITezt {
         }
       }
     } catch (e) {
-      console.error(e)
+      error(e)
     }
     mp()
 
@@ -419,21 +421,22 @@ interface ITrapOptions {
 
 async function trapRun(fn: (...args) => any, options: ITrapOptions) {
   let err = null
+  const handleUncaught = err => {
+    console.error(`There was an uncaught exception`)
+    noTimeout = true
+    uncaughtRej(err)
+  }
+  let uncaughtErr, uncaughtRej;
+  const uncaughtPromise = new Promise((res, rej) => {
+    uncaughtRej = rej
+  })
+  let noTimeout = false
   try {
-    let noTimeout = false
     let running = fn()
     ;(global as any).$$teztSingleton.isRunning = true
     // in case there are exceptions in callbacks
-    let uncaughtErr, uncaughtRej;
-    const uncaughtPromise = new Promise((res, rej) => {
-      uncaughtRej = rej
-    })
-    const handleUncaught = err => {
-      console.error(`There was an uncaught exception`)
-      noTimeout = true
-      uncaughtRej(err)
-    }
     process.on('uncaughtException', handleUncaught)
+    process.on('unhandledRejection', handleUncaught)
     if (isPromise(running)) {
       await Promise.race([
         running
@@ -448,13 +451,14 @@ async function trapRun(fn: (...args) => any, options: ITrapOptions) {
       }
     }
     ;(global as any).$$teztSingleton.isRunning = false
-    process.off('uncaughtException', handleUncaught)
     if (uncaughtErr) {
       throw uncaughtErr
     }
   } catch (_err) {
     err = _err
   } finally {
+    process.off('uncaughtException', handleUncaught)
+    process.off('unhandledRejection', handleUncaught)
     return err
   }
 }
