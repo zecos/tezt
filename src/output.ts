@@ -19,9 +19,13 @@ export function outputResults (stats) {
     const relativepath = path.relative(process.cwd(), location.filepath)
     const locationinfo = chalk.red.dim(`  (./${relativepath}:${location.lineno})`)
     console.log(chalk.red(`FAILED: ${name} ${locationinfo}`))
-    const errorMsg = stats.error.stack.split('\n')
-      .map(line => chalk.red(`  ${line}`)).join("\n")
-    console.log(errorMsg)
+    if (stats.error.stack) {
+      const errorMsg = stats.error.stack.split('\n')
+        .map(line => chalk.red(`  ${line}`)).join("\n")
+      console.log(errorMsg)
+    } else {
+      console.log(chalk.red(stats.error))
+    }
   })
 }
 
