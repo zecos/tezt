@@ -290,6 +290,7 @@ export class Tezt extends Block implements ITezt {
       }
       if (containsOnly) {
         for (const after of afters) {
+    const mp = monkeyPatchConsole(options)
           const destroy = mp.setConsoleOutput(stats.afterOutput)
           await after()
           destroy()
@@ -420,6 +421,8 @@ interface ITrapOptions {
 }
 
 async function trapRun(fn: (...args) => any, options: ITrapOptions) {
+  const mp = monkeyPatchConsole(options)
+  const destroy = mp.setConsoleOutput(options.output)
   let err = null
   const handleUncaught = err => {
     console.error(`There was an uncaught exception`)
@@ -464,6 +467,7 @@ async function trapRun(fn: (...args) => any, options: ITrapOptions) {
   } finally {
     process.off('uncaughtException', handleUncaught)
     process.off('unhandledRejection', handleUncaught)
+    destroy()
     return err
   }
 }
