@@ -22,7 +22,6 @@ let tezt;
 export const reset = (!IS_TEST && noop) || (() => _global.$$teztSingleton = tezt = new Tezt)
 if (!_global.$$teztSingleton) {
   reset()
-} else {
 }
 
 export const test:any = (!IS_TEST && noop) || _global.it || _global.test || (() => {
