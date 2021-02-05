@@ -343,7 +343,7 @@ export class Tezt extends Block implements ITezt {
     if (this.output) {
       this.output.push({
         message: args.map(String),
-        location: getLocation(/(Object.console\.log|at console\.log)/),
+        location: getLocation(/tezt\.console\.(t|j)s/),
         type: ConsoleOutputType.Log
       })
     } else {
@@ -356,7 +356,7 @@ export class Tezt extends Block implements ITezt {
     if (this.output) {
       this.output.push({
         message: args.map(String),
-        location: getLocation(/(Object.console\.warn|at console\.warn)/),
+        location: getLocation(/tezt\.console\.(t|j)s/),
         type: ConsoleOutputType.Warn
       })
     } else {
@@ -367,7 +367,7 @@ export class Tezt extends Block implements ITezt {
     if (this.output) {
       this.output.push({
         message: args.map(String),
-        location: getLocation(/(Object.console\.error|at console\.error)/),
+        location: getLocation(/tezt\.console\.(t|j)s/),
         type: ConsoleOutputType.Error
       })
     } else {

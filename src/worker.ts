@@ -60,7 +60,6 @@ export const run = async ({config, testFiles}) => {
     importPromises.push(import(path.resolve(process.cwd(), file)))
   }
   await Promise.all(importPromises)
-  console.timeEnd('import')
 
   const compositeStats: any[] = []
   for (const fn of global.globalBeforeAlls) {
@@ -82,7 +81,6 @@ export const run = async ({config, testFiles}) => {
       }
       isOnly = true
     }
-    console.time(tezt.file)
     const statPromise = tezt.run()
     statPromises.push({
       promise: statPromise,
@@ -93,7 +91,6 @@ export const run = async ({config, testFiles}) => {
 
   for (const {promise, isOnly, file} of statPromises) {
     const stats = await promise
-    console.timeEnd(file)
     if (stats.totalRun === 0) {
       continue
     }
@@ -102,7 +99,6 @@ export const run = async ({config, testFiles}) => {
     compositeStats.push(stats)
     log()
   }
-  console.timeEnd('run')
   for (const fn of global.globalAfterAlls) {
     await fn()
   }

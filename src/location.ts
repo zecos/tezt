@@ -25,6 +25,12 @@ export function getLocation(matchLine): ILocation {
     /.*\s\(?\w:([^:]+):(\d+):\d+\)?$/
   const result = regExp.exec(fileLine)
   if (!result) {
+    log(matchLine)
+    log(lineIndex)
+    log(lines)
+    log(fileLine)
+  }
+  if (!result) {
     return  {
       filepath: 'unknown',
       lineno: 'unkown',
