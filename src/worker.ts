@@ -68,7 +68,6 @@ export const run = async ({config, testFiles}) => {
   const statPromises = []
   const hasOnlys = Object.values<ITezt>(instances)
     .some(instance => instance.isOnly)
-  console.time('run')
   for (const tezt of Object.values<ITezt>(instances)) {
     if (tezt.isSkipped) {
       log(`Skipping: ${tezt.file}`)
