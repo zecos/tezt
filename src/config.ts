@@ -1,5 +1,6 @@
 import fs from 'fs-extra'
 import path, { resolve } from 'path'
+import JSON5 from 'json5'
 
 const baseDefault = {
   // glob for test files
@@ -156,7 +157,7 @@ async function getUserConfig(root) {
   const packageJsonPath = path.join(root, 'package.json')
   const hasPackageJson = await fs.exists(packageJsonPath)
   if (hasPackageJson) {
-    const packageJson = fs.readJson(packageJsonPath)
+    const packageJson = await fs.readJson(packageJsonPath)
     return packageJson.tezt
   }
 }
@@ -171,6 +172,10 @@ async function getProjectRoot() {
   }
 }
 
+
+const getJson5 = async (file:string) => {
+  return JSON5.parse((await fs.readFile(file)).toString())
+}
 
 
 const checkConfig = async (config) => {
@@ -205,7 +210,7 @@ const checkConfig = async (config) => {
     }
   }
   if (fs.existsSync(path.resolve(config.root, "tsconfig.json"))) {
-    const tsConfigJson = await import(path.resolve(config.root, "tsconfig.json"))
+    const tsConfigJson = await getJson5(path.resolve(config.root, "tsconfig.json"))
     if (tsConfigJson.module && tsConfigJson.module !== "commonjs") {
       if (!tsConfigJson['ts-node']
         || !tsConfigJson['compilerOptions']
