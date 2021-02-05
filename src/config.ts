@@ -23,6 +23,8 @@ const baseDefault = {
   timeout: 5000,
   // default time to wait after test is complete for asynchronous errors
   gracePeriod: 5,
+  // run tests in parallel, but track by filename of actual test
+  parallel: true,
 }
 
 export async function getConfig() {

@@ -17,9 +17,10 @@ const log = console.log
 declare var global: any
 process.on('uncaughtException', (err) => {
   if (cluster.isWorker) {
-    const singleton = global.$$teztSingleton
-    if (singleton && singleton.isRunning) {
-      return
+    for (const instance of Object.values(global.$$teztInstances)) {
+      if (instance && (instance as any).isRunning) {
+        return
+      }
     }
   }
   error("There was an uncaught exception")

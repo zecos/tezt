@@ -1,13 +1,13 @@
+global.$$TEZT_PARALLEL = true
+const {log} = console
 import chalk from 'chalk';
-import { reset as singletonReset } from './tezt.singleton'
+import { reset } from './tezt.singleton'
 import { outputCompositeResults, outputResults } from './output';
 import path from 'path'
 import fetch from 'node-fetch'
 import { READY, RUN, TERMINATE } from './msg';
-
-const log = console.log
-let onlyFiles: string[] = []
-let skipFiles: string[] = []
+import { ITezt, Tezt } from './Tezt';
+const tezts = [...new Array(30)].map(() => new Tezt)
 
 export const runWorker = () => (new Promise<void>((res, rej) => {
   process.send({type: READY})
@@ -33,11 +33,11 @@ export const runWorker = () => (new Promise<void>((res, rej) => {
 }))
 
 export const run = async ({config, testFiles}) => {
+  reset()
+  const instances = global.$$teztInstances
   if (config.setup) {
     await import(path.resolve(config.root, config.setup))
   }
-  const curTezt = global.$$teztSingleton
-  const tezts: any[] = []
   global.globalBeforeEaches = []
   global.globalAfterEaches = []
   global.globalAfterAlls = []
@@ -46,58 +46,63 @@ export const run = async ({config, testFiles}) => {
   if (config.dom) {
     await emulateDom()
   }
-  global.$$teztSingleton = curTezt
+  console.time('import')
+  const importPromises = []
   for (const file of testFiles) {
-    global.only = () => {
-      onlyFiles.push(file)
-    }
-    global.skip = () => {
-      skipFiles.push(file)
-    }
-    // @ts-ignore
-    singletonReset()
-    Object.assign(global.$$teztSingleton, {
+    const tezt = tezts.pop() || new Tezt()
+    Object.assign(tezt, {
       file,
       timeout: config.timeout,
       gracePeriod: config.gracePeriod
     })
+    instances[file] = tezt
 
-    if (config.fns) {
-      const { test } = await import(path.resolve(process.cwd(), file))
-      if (typeof test === "function") {
-        await test()
-      }
-    } else {
-      await import(path.resolve(process.cwd(), file))
-    }
-    tezts.push(global.$$teztSingleton)
+    importPromises.push(import(path.resolve(process.cwd(), file)))
   }
+  await Promise.all(importPromises)
+  console.timeEnd('import')
 
   const compositeStats: any[] = []
   for (const fn of global.globalBeforeAlls) {
     await fn()
   }
-  for (const tezt of tezts) {
-    if (skipFiles.includes(tezt.file)) {
+  const statPromises = []
+  const hasOnlys = Object.values<ITezt>(instances)
+    .some(instance => instance.isOnly)
+  console.time('run')
+  for (const tezt of Object.values<ITezt>(instances)) {
+    if (tezt.isSkipped) {
       log(`Skipping: ${tezt.file}`)
       continue
     }
-    let isOnly = false
-    if (onlyFiles.length) {
-      if (!onlyFiles.includes(tezt.file)) {
+    let isOnly
+    if (hasOnlys) {
+      if (!tezt.isOnly) {
         continue
       }
       isOnly = true
     }
-    const stats = await tezt.run()
+    console.time(tezt.file)
+    const statPromise = tezt.run()
+    statPromises.push({
+      promise: statPromise,
+      isOnly,
+      file: tezt.file,
+    })
+  }
+
+  for (const {promise, isOnly, file} of statPromises) {
+    const stats = await promise
+    console.timeEnd(file)
     if (stats.totalRun === 0) {
       continue
     }
-    log(chalk.bold(`File${isOnly ? " (Only)" : ""}: ${tezt.file}`))
+    log(chalk.bold(`File${isOnly ? " (Only)" : ""}: ${file}`))
     outputResults(stats)
     compositeStats.push(stats)
     log()
   }
+  console.timeEnd('run')
   for (const fn of global.globalAfterAlls) {
     await fn()
   }

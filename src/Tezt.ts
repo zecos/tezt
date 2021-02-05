@@ -1,10 +1,12 @@
 import uuid from 'uuid/v4'
 import { RunCallbacks, IRunCallbacks } from './RunCallbacks';
-import { monkeyPatchConsole, IConsoleOutput, ILocation, getLocation } from './patch';
+import { getLocation, ILocation } from './location';
 import { promisify } from 'util';
+import { ConsoleOutputType, IConsoleOutput } from './tezt.console';
+
 
 const globalAny: any = global
-const {log, error} = console
+const {log, error, warn} = console
 export type TVoidFunc = () => void
 export interface IBlock {
   children: TItem[]
@@ -93,6 +95,9 @@ export interface ITezt extends Block {
   file: string
   timeout: number
   gracePeriod: number
+  run: (...args) => any
+  isSkipped: boolean
+  isOnly: boolean
 }
 
 export class Tezt extends Block implements ITezt {
@@ -110,6 +115,8 @@ export class Tezt extends Block implements ITezt {
   isRunning = false
   timeout = 5000
   gracePeriod = 5
+  isOnly = false
+  isSkipped = false
 
 
   constructor() {
@@ -129,9 +136,8 @@ export class Tezt extends Block implements ITezt {
       }
       this.curBlock.totalTests++
       const test = new Test(name, fn)
-      if (options.timeout) {
-        test.timeout = options.timeout
-      }
+      test.timeout = options.timeout
+      test.gracePeriod = options.gracePeriod
       this.curBlock.children.push(test)
       if (this.inOnly) {
         for (const ancestor of this.curAncestors){
@@ -204,7 +210,6 @@ export class Tezt extends Block implements ITezt {
       options = new RunOptions,
       name?: string
   ) => {
-    const mp = monkeyPatchConsole(options)
     const {
       children,
       beforeEaches,
@@ -221,9 +226,9 @@ export class Tezt extends Block implements ITezt {
           if (callbacks.before) {
             callbacks.before(block, inskip, depth)
           }
-          const dispose = mp.setConsoleOutput(stats.beforeOutput)
+          this.output = stats.beforeOutput
           await before()
-          dispose()
+          this.output = null
         }
       }
 
@@ -255,13 +260,13 @@ export class Tezt extends Block implements ITezt {
             }
             const runMulti = async (fns, name) => {
               for (const fn of fns) {
-                const err = await trapRun(fn, {
-                  output: testStats[`${name}Output`],
+                this.output = testStats[`${name}Output`]
+                const err = await this.trapRun(fn, {
                   name: `${item.name}.beforeEach`,
                   timeout: this.timeout,
-                  outputToConsole: options.outputToConsole,
                   gracePeriod: this.gracePeriod,
                 })
+                this.output = null
                 if (err) {
                   throw err
                 }
@@ -271,13 +276,13 @@ export class Tezt extends Block implements ITezt {
             await runMulti(globalAny.globalBeforeEaches, 'globalBeforeEach')
             await runMulti(beforeEaches, 'beforeEach')
 
-            const err = await trapRun(item.fn, {
-              output: testStats.output,
+            this.output = testStats.output
+            const err = await this.trapRun(item.fn, {
               name: item.name,
-              timeout: this.timeout,
-              outputToConsole: options.outputToConsole,
-              gracePeriod: this.gracePeriod,
+              timeout: item.timeout ?? this.timeout,
+              gracePeriod: item.gracePeriod ?? this.gracePeriod,
             })
+            this.output = null
             if (err) {
               throw err
             }
@@ -302,19 +307,18 @@ export class Tezt extends Block implements ITezt {
       }
       if (containsOnly) {
         for (const after of afters) {
-    const mp = monkeyPatchConsole(options)
-          const destroy = mp.setConsoleOutput(stats.afterOutput)
+          this.output = stats.afterOutput
           await after()
-          destroy()
+          this.output = null
           if (callbacks.after) {
             callbacks.after(stats)
           }
         }
       }
     } catch (e) {
+      this.output = null
       error(e)
     }
-    mp()
 
     return stats
   }
@@ -333,10 +337,92 @@ export class Tezt extends Block implements ITezt {
   public after      = fn => this.curBlock.afters.push(fn)
   public afterEach  = fn => this.curBlock.afterEaches.push(fn)
   public afterAll   = fn => this.afterAlls.push(fn)
+
+  public output = null
+  public log = (...args) => {
+    if (this.output) {
+      this.output.push({
+        message: args.map(String),
+        location: getLocation(/(Object.console\.log|at console\.log)/),
+        type: ConsoleOutputType.Log
+      })
+    } else {
+      log('file: ', this.file)
+      log('this.output not found', ...args)
+      log(...args)
+    }
+  }
+  public warn = (...args) => {
+    if (this.output) {
+      this.output.push({
+        message: args.map(String),
+        location: getLocation(/(Object.console\.warn|at console\.warn)/),
+        type: ConsoleOutputType.Warn
+      })
+    } else {
+      warn(...args)
+    }
+  }
+  public error = (...args) => {
+    if (this.output) {
+      this.output.push({
+        message: args.map(String),
+        location: getLocation(/(Object.console\.error|at console\.error)/),
+        type: ConsoleOutputType.Error
+      })
+    } else {
+      error(...args)
+    }
+  }
+  public async trapRun(fn: (...args) => any, options: ITrapOptions) {
+    let err = null
+    const handleUncaught = err => {
+      console.error(`There was an uncaught exception`)
+      noTimeout = true
+      uncaughtRej(err)
+    }
+    let uncaughtErr, uncaughtRej;
+    const uncaughtPromise = new Promise((res, rej) => {
+      uncaughtRej = rej
+    })
+    let noTimeout = false
+    try {
+      let running = fn()
+      this.isRunning = true
+      // in case there are exceptions in callbacks
+      process.on('uncaughtException', handleUncaught)
+      process.on('unhandledRejection', handleUncaught)
+      if (isPromise(running)) {
+        await Promise.race([
+          running
+            .then(()=> {
+              noTimeout = true
+            }),
+          timeout(options.timeout || 5000),
+          uncaughtPromise,
+        ])
+        if (!noTimeout) {
+          throw new Error(`'${options.name || 'function'}' timed out.`)
+        }
+      }
+      // wait for unresolved promises, just in case
+      await Promise.race([
+        uncaughtPromise,
+        promisify(setTimeout)(options.gracePeriod || 3),
+      ])
+      this.isRunning = false
+      if (uncaughtErr) {
+        throw uncaughtErr
+      }
+    } catch (_err) {
+      err = _err
+    } finally {
+      process.off('uncaughtException', handleUncaught)
+      process.off('unhandledRejection', handleUncaught)
+      return err
+    }
+  }
 }
-
-
-
 
 type TBlockOrTestStats = ITestStats | IBlockStats
 
@@ -427,60 +513,6 @@ function isPromise(p) {
 
 interface ITrapOptions {
   name: string
-  outputToConsole: boolean
   timeout: number
   gracePeriod: number
-  output: IConsoleOutput[]
-}
-
-async function trapRun(fn: (...args) => any, options: ITrapOptions) {
-  const mp = monkeyPatchConsole(options)
-  const destroy = mp.setConsoleOutput(options.output)
-  let err = null
-  const handleUncaught = err => {
-    console.error(`There was an uncaught exception`)
-    noTimeout = true
-    uncaughtRej(err)
-  }
-  let uncaughtErr, uncaughtRej;
-  const uncaughtPromise = new Promise((res, rej) => {
-    uncaughtRej = rej
-  })
-  let noTimeout = false
-  try {
-    let running = fn()
-    ;(global as any).$$teztSingleton.isRunning = true
-    // in case there are exceptions in callbacks
-    process.on('uncaughtException', handleUncaught)
-    process.on('unhandledRejection', handleUncaught)
-    if (isPromise(running)) {
-      await Promise.race([
-        running
-          .then(()=> {
-            noTimeout = true
-          }),
-        timeout(options.timeout || 5000),
-        uncaughtPromise,
-      ])
-      if (!noTimeout) {
-        throw new Error(`'${options.name || 'function'}' timed out.`)
-      }
-    }
-    // wait for unresolved promises, just in case
-    await Promise.race([
-      uncaughtPromise,
-      promisify(setTimeout)(options.gracePeriod || 3),
-    ])
-    ;(global as any).$$teztSingleton.isRunning = false
-    if (uncaughtErr) {
-      throw uncaughtErr
-    }
-  } catch (_err) {
-    err = _err
-  } finally {
-    process.off('uncaughtException', handleUncaught)
-    process.off('unhandledRejection', handleUncaught)
-    destroy()
-    return err
-  }
 }

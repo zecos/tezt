@@ -21,7 +21,7 @@ export const run = async () => {
     process.exit()
   }
   const numCPUs = os.cpus().length
-  const numWorkers = Math.max(numCPUs, MAX_WORKERS)
+  const numWorkers = Math.min(numCPUs, MAX_WORKERS)
   const workers = genWorkers(numWorkers)
 
   let running = false

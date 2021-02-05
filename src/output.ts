@@ -2,8 +2,9 @@ import chalk from "chalk";
 import path from 'path'
 
 import { TestStatus } from './Tezt';
-import { ConsoleOutputType } from './patch'
+import { ConsoleOutputType } from './tezt.console'
 
+const { log, error } = console
 export function outputResults (stats) {
   const { passed, totalRun, failed, skipped } = stats
   outputContent(stats)
@@ -12,19 +13,19 @@ export function outputResults (stats) {
   const skippedMsg = chalk.yellow(`${skipped.length} skipped`)
   const passedMsg = chalk.green(`${passed.length} passed`)
   const totalMsg = `${totalTests} total`
-  console.log()
-  console.log(`Tests: ${failedMsg}, ${skippedMsg}, ${passedMsg}, ${totalMsg}, ${totalRun} run`)
+  log()
+  log(`Tests: ${failedMsg}, ${skippedMsg}, ${passedMsg}, ${totalMsg}, ${totalRun} run`)
   failed.forEach(stats => {
     const {location, name} = stats.item
     const relativepath = path.relative(process.cwd(), location.filepath)
     const locationinfo = chalk.red.dim(`  (./${relativepath}:${location.lineno})`)
-    console.log(chalk.red(`FAILED: ${name} ${locationinfo}`))
+    log(chalk.red(`FAILED: ${name} ${locationinfo}`))
     if (stats.error.stack) {
       const errorMsg = stats.error.stack.split('\n')
         .map(line => chalk.red(`  ${line}`)).join("\n")
-      console.log(errorMsg)
+      log(errorMsg)
     } else {
-      console.log(chalk.red(stats.error))
+      log(chalk.red(stats.error))
     }
   })
 }
@@ -42,7 +43,7 @@ function outputContent(stats) {
   for (const itemStats of stats.children) {
     if (itemStats.type === "block") {
       const indentation = "  ".repeat(depth)
-      console.log(`${indentation}# ${itemStats.name}`)
+      log(`${indentation}# ${itemStats.name}`)
       outputContent(itemStats)
     } else if (itemStats.type === "test") {
       const {item, status, depth} = itemStats
@@ -52,7 +53,7 @@ function outputContent(stats) {
       const { location } = itemStats.item
       const relativepath = path.relative(process.cwd(), location.filepath)
       const locationinfo = chalk.dim(`  (./${relativepath}:${location.lineno})`)
-      console.log(`${indentation}${precursor}${name}${locationinfo}`)
+      log(`${indentation}${precursor}${name}${locationinfo}`)
       logoutputs(itemStats.beforeEachOutput, depth+1)
       logoutputs(itemStats.output, depth+1)
       logoutputs(itemStats.afterEachOutput, depth+1)
@@ -71,11 +72,11 @@ function logoutputs(outputs, depth) {
     const locationinfo = `  (./${relativepath}:${location.lineno})`
     const formattedOutput = `${indentation}${message.join(" ")}${locationinfo}`
     if (type === ConsoleOutputType.Warn) {
-      console.log(chalk.yellow.dim(formattedOutput))
+      log(chalk.yellow.dim(formattedOutput))
     } else if (output.type === ConsoleOutputType.Error) {
-      console.log(chalk.red.dim(formattedOutput))
+      log(chalk.red.dim(formattedOutput))
     } else if (output.type === ConsoleOutputType.Log) {
-      console.log(chalk.dim(formattedOutput))
+      log(chalk.dim(formattedOutput))
     }
   }
 }
@@ -97,6 +98,6 @@ export function outputCompositeResults(compositeStats) {
   const skippedMsg = chalk.yellow(`${results.skipped} skipped`)
   const passedMsg = chalk.green(`${results.passed} passed`)
   const totalMsg = `${totalTests} total`
-  console.log()
-  console.log(`Composite Results: ${failedMsg}, ${skippedMsg}, ${passedMsg}, ${totalMsg}`)
+  log()
+  log(`Composite Results: ${failedMsg}, ${skippedMsg}, ${passedMsg}, ${totalMsg}`)
 }
