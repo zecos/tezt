@@ -13,9 +13,9 @@ const noop = () => {}
 
 const IN_NODE = typeof window === "undefined"
 const IS_TEST = process.env.NODE_ENV === "test"
-const global:any = IN_NODE ? global : window
+const _global:any = IN_NODE ? global : window
 
-const IN_OTHER = global.test ||  global.it
+const IN_OTHER = _global.test ||  _global.it
 
 let tezt;
 export const reset = (() => {
@@ -23,29 +23,29 @@ export const reset = (() => {
     return noop
   }
   return () => {
-    if (global.$$TEZT_PARALLEL) {
-      global.$$teztInstances = {}
+    if (_global.$$TEZT_PARALLEL) {
+      _global.$$teztInstances = {}
     } else {
-      global.$$teztSingleton = new Tezt
+      _global.$$teztSingleton = new Tezt
     }
   }
 })()
 
-if (!(global.$$teztSingleton || global.$$teztInstances)) {
+if (!(_global.$$teztSingleton || _global.$$teztInstances)) {
   reset()
 }
 
 export const getInstance = () => {
-  if (global.$$TEZT_PARALLEL) {
+  if (_global.$$TEZT_PARALLEL) {
     const {filepath} = getLocation(/tezt\.singleton\.(t|j)s/)
-    return global.$$teztInstances[path.relative(process.cwd(), filepath)]
+    return _global.$$teztInstances[path.relative(process.cwd(), filepath)]
   }
-  return global.$$teztSingleton
+  return _global.$$teztSingleton
 }
 
 const {log, warn, error} = console
 
-export const test:any = (!IS_TEST && noop) || global.it || global.test || (() => {
+export const test:any = (!IS_TEST && noop) || _global.it || _global.test || (() => {
   const fn = (...args) => {
     getInstance().test(...args)
   }
@@ -54,7 +54,7 @@ export const test:any = (!IS_TEST && noop) || global.it || global.test || (() =>
   return fn
 })()
 
-export const describe:any = (!IS_TEST && noop) || global.describe || (() => {
+export const describe:any = (!IS_TEST && noop) || _global.describe || (() => {
   const fn = (...args) => getInstance().describe(...args)
   fn.skip = (...args) => getInstance().describe.skip(...args)
   fn.only = (...args) => getInstance().describe.only(...args)
@@ -62,41 +62,43 @@ export const describe:any = (!IS_TEST && noop) || global.describe || (() => {
 })()
 
 export const before = (!IS_TEST && noop) ||
-  global.before ||
-  global.beforeAll ||
+  _global.before ||
+  _global.beforeAll ||
   ((...args) => getInstance().before(...args))
 export const beforeEach = (!IS_TEST && noop) ||
-  global.beforeEach ||
+  _global.beforeEach ||
   ((...args) => getInstance().beforeEach(...args))
 export const globalBeforeEach = (!IS_TEST && noop) ||
-  (fn => global.globalBeforeEaches.push(fn))
-export const beforeAll = global.beforeAll ||
+  (fn => _global.globalBeforeEaches.push(fn))
+export const beforeAll = _global.beforeAll ||
   ((...args) => getInstance().beforeAll(...args))
 export const globalBeforeAll = (!IS_TEST && noop) || (fn => {
-  global.globalBeforeAlls.push(fn)
+  _global.globalBeforeAlls.push(fn)
 })
 
 export const after =  (!IS_TEST && noop) ||
-  global.after ||
-  global.afterAll ||
+  _global.after ||
+  _global.afterAll ||
   ((...args) => getInstance().after(...args))
 export const afterEach = (!IS_TEST && noop) ||
-  global.afterEach ||
+  _global.afterEach ||
   ((...args) => getInstance().afterEach(...args))
 export const globalAfterEach = (!IS_TEST && noop) ||
-  (fn => global.globalAfterEaches.push(fn))
+  (fn => _global.globalAfterEaches.push(fn))
 export const afterAll = (!IS_TEST && noop) ||
-  global.afterAll ||
+  _global.afterAll ||
   ((...args) => getInstance().afterAll(...args))
-export const globalAfterAll = fn => global.globalAfterAlls.push(fn)
+export const globalAfterAll = fn => {
+  _global.globalAfterAlls.push(fn)
+}
 
 export const only = (!IS_TEST && noop) || (() => {
-  if (global.$$TEZT_PARALLEL) {
+  if (_global.$$TEZT_PARALLEL) {
     getInstance().isOnly = true
   }
 })
 export const skip = (!IS_TEST && noop) || (() => {
-  if (global.$$TEZT_PARALLEL) {
+  if (_global.$$TEZT_PARALLEL) {
     getInstance().isSkipped = true
   }
 })
@@ -110,11 +112,11 @@ process.on('beforeExit', async () => {
   }
   if (!hasRun && !IN_OTHER && !(process.env.TEZT === "cli")) {
     hasRun = true
-    for (const globalBeforeAll of global.globalBeforeAlls) {
+    for (const globalBeforeAll of _global.globalBeforeAlls) {
       await globalBeforeAll()
     }
     outputResults(await tezt.run())
-    for (const globalAfterAll of global.globalAfterAlls) {
+    for (const globalAfterAll of _global.globalAfterAlls) {
       await globalAfterAll()
     }
   }

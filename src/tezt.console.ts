@@ -19,7 +19,10 @@ declare var global: any;
 const getInstance = () => {
   if (global.$$TEZT_PARALLEL) {
     const {filepath} = getLocation(/Tezt\.trapRun/)
-    return global.$$teztInstances[path.relative(process.cwd(), filepath)]
+    if (global.$$teztInstances) {
+      return global.$$teztInstances[path.relative(process.cwd(), filepath)]
+    }
+    return
   }
   return global.$$teztSingleton
 }
