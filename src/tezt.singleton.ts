@@ -18,8 +18,10 @@ const _global:any = IN_NODE ? global : window
 
 const IN_OTHER = _global.test ||  _global.it
 
-// _global.globalBeforeAlls ??= []
-// _global.globalAfterAlls ??= []
+_global.globalBeforeAlls ??= []
+_global.globalAfterAlls ??= []
+_global.globalBeforeEaches ??= []
+_global.globalAfterEaches ??= []
 
 let tezt;
 export const reset = (() => {
