@@ -46,8 +46,7 @@ async function main() {
       await runWorker()
     }
   } catch (err) {
-    console.error(err)
-    console.log('caught error')
+    error(err)
   }
 }
 
