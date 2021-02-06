@@ -17,7 +17,7 @@ export function getLocation(matchLine): ILocation {
     .split('\n')
   lines.reverse()
 
-  const lineIndex = lines.findIndex(line => matchLine.test(line))
+  let lineIndex = lines.findIndex(line => matchLine.test(line))
 
   const fileLine = lines[lineIndex - 1]
   const regExp = platform() !== "win32" ?

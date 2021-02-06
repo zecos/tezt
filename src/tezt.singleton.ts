@@ -1,7 +1,6 @@
 // @ts-nocheck
 import { Tezt } from './Tezt'
 import { outputResults } from './output';
-import 'source-map-support/register'
 import { getLocation } from './location';
 import path from 'path'
 import { collapseTextChangeRangesAcrossMultipleVersions } from 'typescript';

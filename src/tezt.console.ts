@@ -69,6 +69,37 @@ export const patchConsole = () => {
 //     }
 //   }
 // }
+// export function getLocation(matchLine): ILocation {
+//   require('source-map-support/register')
+//   const {stack} = new Error()
+//   const lines = stack
+//     .split('\n')
+//   lines.reverse()
+
+//   const lineIndex = lines.findIndex(line => matchLine.test(line))
+
+//   const fileLine = lines[lineIndex + 1]
+//   const regExp = platform() !== "win32" ?
+//     /.*\s\(?([^:]+):(\d+):\d+\)?$/ :
+//     /.*\s\(?\w:([^:]+):(\d+):\d+\)?$/
+//   const result = regExp.exec(fileLine)
+//   log(lines)
+//   if (!result) {
+//     log('unknown')
+//     return  {
+//       filepath: 'unknown',
+//       lineno: 'unkown',
+//     }
+//   }
+
+//   const [_, filepath, lineno] = result
+//   log(filepath)
+//   return {
+//     filepath,
+//     lineno,
+//   }
+// }
+
 export function getLocation(matchLine): ILocation {
   require('source-map-support/register')
   const {stack} = new Error()
@@ -76,9 +107,14 @@ export function getLocation(matchLine): ILocation {
     .split('\n')
   lines.reverse()
 
-  const lineIndex = lines.findIndex(line => matchLine.test(line))
+  let lineIndex = lines.findIndex(line => matchLine.test(line))
+  lineIndex++
+  while (/internal\/process\/task_queues\.js/.test(lines[lineIndex])) {
+    lineIndex++
+  }
 
-  const fileLine = lines[lineIndex + 1]
+
+  const fileLine = lines[lineIndex]
   const regExp = platform() !== "win32" ?
     /.*\s\(?([^:]+):(\d+):\d+\)?$/ :
     /.*\s\(?\w:([^:]+):(\d+):\d+\)?$/
