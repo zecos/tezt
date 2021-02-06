@@ -24,7 +24,7 @@ export const reset = (() => {
   }
   return () => {
     if (global.$$TEZT_PARALLEL) {
-      global.$$teztInstances = []
+      global.$$teztInstances = {}
     } else {
       global.$$teztSingleton = new Tezt
     }
