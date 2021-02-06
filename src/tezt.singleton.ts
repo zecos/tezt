@@ -12,10 +12,10 @@ Error.prepareStackTrace = (...args) => {
 
 const noop = () => {}
 
+declare var global: any;
 const IN_NODE = typeof window === "undefined"
 const IS_TEST = process.env.NODE_ENV === "test"
 let _global:any = IN_NODE ? global : window
-const IS_PARALLEL = _global.$$TEZT_PARALLEL
 
 const IN_OTHER = _global.test ||  _global.it
 
@@ -27,12 +27,13 @@ export const reset = (() => {
   if (!IS_TEST) {
     return noop
   }
-  if (IS_PARALLEL) {
-    return () => {
+  return () => {
+    if (global.$$TEZT_PARALLEL) {
       _global.$$teztInstances = []
+    } else {
+      _global.$$teztSingleton = new Tezt
     }
   }
-  return () => _global.$$teztSingleton = tezt = new Tezt
 })()
 
 if (!(_global.$$teztSingleton || _global.$$teztInstances)) {
@@ -40,9 +41,13 @@ if (!(_global.$$teztSingleton || _global.$$teztInstances)) {
 }
 
 export const getInstance = () => {
-  if (IS_PARALLEL) {
+  if (global.$$TEZT_PARALLEL) {
     const {filepath} = getLocation(/tezt\.singleton\.(t|j)s/)
-    return _global.$$teztInstances[path.relative(process.cwd(), filepath)]
+    const instance = global.$$teztInstances[path.relative(process.cwd(), filepath)]
+    if (!instance) {
+      log({filepath})
+    }
+    return global.$$teztInstances[path.relative(process.cwd(), filepath)]
   }
   return _global.$$teztSingleton
 }
@@ -52,6 +57,8 @@ patchConsole()
 
 export const test:any = (!IS_TEST && noop) || _global.it || _global.test || (() => {
   const fn = (...args) => {
+    const instance = getInstance()
+    log()
     getInstance().test(...args)
   }
   fn.skip = (...args) => getInstance().test.skip(...args)
@@ -94,12 +101,12 @@ export const afterAll = (!IS_TEST && noop) ||
 export const globalAfterAll = fn => _global.globalAfterAlls.push(fn)
 
 export const only = (!IS_TEST && noop) || (() => {
-  if (IS_PARALLEL) {
+  if (global.$$TEZT_PARALLEL) {
     getInstance().isOnly = true
   }
 })
 export const skip = (!IS_TEST && noop) || (() => {
-  if (IS_PARALLEL) {
+  if (global.$$TEZT_PARALLEL) {
     getInstance().isSkipped = true
   }
 })
