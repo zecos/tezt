@@ -1,13 +1,16 @@
 global.$$TEZT_PARALLEL = true
 const {log} = console
+import { patchConsole } from './tezt.console'
 import chalk from 'chalk';
-import { reset } from './tezt.singleton'
+patchConsole()
 import { outputCompositeResults, outputResults } from './output';
 import path from 'path'
 import fetch from 'node-fetch'
 import { READY, RUN, TERMINATE } from './msg';
 import { ITezt, Tezt } from './Tezt';
+import { reset } from './tezt.singleton'
 const tezts = [...new Array(30)].map(() => new Tezt)
+
 
 export const runWorker = () => (new Promise<void>((res, rej) => {
   process.send({type: READY})
@@ -81,6 +84,7 @@ export const run = async ({config, testFiles}) => {
       isOnly = true
     }
     const statPromise = tezt.run()
+
     statPromises.push({
       promise: statPromise,
       isOnly,
