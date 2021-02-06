@@ -1,3 +1,7 @@
+global.globalBeforeEaches = []
+global.globalAfterEaches = []
+global.globalAfterAlls = []
+global.globalBeforeAlls = []
 global.$$TEZT_PARALLEL = true
 const {log} = console
 import { patchConsole } from './tezt.console'
@@ -41,10 +45,6 @@ export const run = async ({config, testFiles}) => {
   if (config.setup) {
     await import(path.resolve(config.root, config.setup))
   }
-  global.globalBeforeEaches = []
-  global.globalAfterEaches = []
-  global.globalAfterAlls = []
-  global.globalBeforeAlls = []
 
   if (config.dom) {
     await emulateDom()

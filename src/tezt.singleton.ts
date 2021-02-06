@@ -4,6 +4,7 @@ import { outputResults } from './output';
 import 'source-map-support/register'
 import { getLocation } from './location';
 import path from 'path'
+import { collapseTextChangeRangesAcrossMultipleVersions } from 'typescript';
 const originalPrepareStackTrace = Error.prepareStackTrace
 Error.prepareStackTrace = (...args) => {
   return originalPrepareStackTrace(...args)
@@ -11,11 +12,14 @@ Error.prepareStackTrace = (...args) => {
 
 const noop = () => {}
 
-const IN_NODE = typeof window === "undefined"
+const IN_NODE = typeof process !== "undefined"
 const IS_TEST = process.env.NODE_ENV === "test"
 const _global:any = IN_NODE ? global : window
 
 const IN_OTHER = _global.test ||  _global.it
+
+// _global.globalBeforeAlls ??= []
+// _global.globalAfterAlls ??= []
 
 let tezt;
 export const reset = (() => {
