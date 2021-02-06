@@ -347,8 +347,6 @@ export class Tezt extends Block implements ITezt {
         type: ConsoleOutputType.Log
       })
     } else {
-      log('file: ', this.file)
-      log('this.output not found', ...args)
       log(...args)
     }
   }

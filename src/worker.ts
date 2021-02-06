@@ -46,7 +46,7 @@ export const run = async ({config, testFiles}) => {
   if (config.dom) {
     await emulateDom()
   }
-  console.time('import')
+
   const importPromises = []
   for (const file of testFiles) {
     const tezt = tezts.pop() || new Tezt()
