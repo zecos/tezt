@@ -43,10 +43,6 @@ if (!(_global.$$teztSingleton || _global.$$teztInstances)) {
 export const getInstance = () => {
   if (global.$$TEZT_PARALLEL) {
     const {filepath} = getLocation(/tezt\.singleton\.(t|j)s/)
-    const instance = global.$$teztInstances[path.relative(process.cwd(), filepath)]
-    if (!instance) {
-      log({filepath})
-    }
     return global.$$teztInstances[path.relative(process.cwd(), filepath)]
   }
   return _global.$$teztSingleton
@@ -57,8 +53,6 @@ patchConsole()
 
 export const test:any = (!IS_TEST && noop) || _global.it || _global.test || (() => {
   const fn = (...args) => {
-    const instance = getInstance()
-    log()
     getInstance().test(...args)
   }
   fn.skip = (...args) => getInstance().test.skip(...args)
