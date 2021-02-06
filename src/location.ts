@@ -11,7 +11,6 @@ export class Location implements ILocation {
 
 const { log } = console
 export function getLocation(matchLine): ILocation {
-  require('source-map-support/register')
   const {stack} = new Error()
   const lines = stack
     .split('\n')

@@ -101,7 +101,6 @@ export const patchConsole = () => {
 // }
 
 export function getLocation(matchLine): ILocation {
-  require('source-map-support/register')
   const {stack} = new Error()
   const lines = stack
     .split('\n')
