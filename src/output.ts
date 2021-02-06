@@ -98,6 +98,5 @@ export function outputCompositeResults(compositeStats) {
   const skippedMsg = chalk.yellow(`${results.skipped} skipped`)
   const passedMsg = chalk.green(`${results.passed} passed`)
   const totalMsg = `${totalTests} total`
-  log()
   log(`Composite Results: ${failedMsg}, ${skippedMsg}, ${passedMsg}, ${totalMsg}`)
 }
