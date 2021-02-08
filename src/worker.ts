@@ -10,9 +10,10 @@ patchConsole()
 import { outputCompositeResults, outputResults } from './output';
 import path from 'path'
 import fetch from 'node-fetch'
-import { READY, RUN, TERMINATE } from './msg';
+import { PRELOAD, READY, RUN, TERMINATE } from './msg';
 import { ITezt, Tezt } from './Tezt';
 import { reset } from './tezt.singleton'
+import { preloadModules } from './preload'
 const tezts = [...new Array(30)].map(() => new Tezt)
 
 
@@ -34,6 +35,12 @@ export const runWorker = () => (new Promise<void>((res, rej) => {
       } catch (err) {
         console.error(err)
         process.exit(1)
+      }
+    } else if (msg.type === PRELOAD) {
+      try {
+        await preloadModules(msg.data)
+      } catch (err) {
+        console.error(err)
       }
     }
   })
