@@ -1,11 +1,12 @@
 import chalk from "chalk";
+import { Console } from "console";
 import path from 'path'
 
 import { TestStatus } from './Tezt';
 import { ConsoleOutputType } from './tezt.console'
 
 declare var global: any;
-const { log, error } = global.$$teztRealConsole
+const { log, error, dir } = global.$$teztRealConsole
 export function outputResults (stats) {
   const { passed, totalRun, failed, skipped } = stats
   outputContent(stats)
@@ -75,9 +76,11 @@ function logoutputs(outputs, depth) {
     if (type === ConsoleOutputType.Warn) {
       log(chalk.yellow.dim(formattedOutput))
     } else if (output.type === ConsoleOutputType.Error) {
-      log(chalk.red.dim(formattedOutput))
+      error(chalk.red.dim(formattedOutput))
     } else if (output.type === ConsoleOutputType.Log) {
       log(chalk.dim(formattedOutput))
+    } else if (output.type === ConsoleOutputType.Dir) {
+      dir(chalk.dim(formattedOutput))
     }
   }
 }
