@@ -396,7 +396,7 @@ export class Tezt extends Block implements ITezt {
   public async trapRun(fn: (...args) => any, options: ITrapOptions) {
     let err = null
     const handleUncaught = err => {
-      console.error(`There was an uncaught exception`)
+      error(`There was an uncaught exception`)
       noTimeout = true
       uncaughtRej(err)
     }
