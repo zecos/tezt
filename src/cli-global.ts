@@ -7,20 +7,21 @@ import { spawn } from 'child_process'
 import ('source-map-support/register')
 import {renderString} from 'termd/src/termd'
 
+const { log } = console
 process.env.NODE_ENV = "test"
 process.env.TEZT = "cli"
 process.env.FORCE_COLOR = process.env.FORCE_COLOR || "1"
 async function main() {
   if (process.argv.includes("--version") || process.argv.includes("-v")) {
     const packageJson = await import("../package.json")
-    console.log(packageJson.version)
+    log(packageJson.version)
     process.exit()
   }
   if (process.argv.includes("--help") || process.argv.includes("-h")) {
     const readMePath = path.resolve(__dirname, '..', '..', 'README.md')
     const str = (await fs.readFile(readMePath)).toString()
     const md = renderString(str)
-    console.log(md)
+    log(md)
     process.exit()
   }
   const config = await getConfig()
