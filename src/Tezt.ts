@@ -351,7 +351,7 @@ export class Tezt extends Block implements ITezt {
     } else {
       const {filepath, lineno} = getLocation(/tezt\.console\.(t|j)s/)
       const relPath = path.relative(process.cwd(), filepath)
-      log(...args, chalk.dim(`${relPath}:${lineno}`))
+      log(...args, chalk.dim(`./${relPath}:${lineno}`))
     }
   }
   public warn = (...args) => {
@@ -364,7 +364,7 @@ export class Tezt extends Block implements ITezt {
     } else {
       const {filepath, lineno} = getLocation(/tezt\.console\.(t|j)s/)
       const relPath = path.relative(process.cwd(), filepath)
-      warn(...args, chalk.yellow.dim(`${relPath}:${lineno}`))
+      warn(...args, chalk.yellow.dim(`./${relPath}:${lineno}`))
     }
   }
   public error = (...args) => {
@@ -377,7 +377,7 @@ export class Tezt extends Block implements ITezt {
     } else {
       const {filepath, lineno} = getLocation(/tezt\.console\.(t|j)s/)
       const relPath = path.relative(process.cwd(), filepath)
-      error(...args, chalk.red.dim(`${relPath}, ${lineno}`))
+      error(...args, chalk.red.dim(`./${relPath}, ${lineno}`))
     }
   }
   public dir = (...args) => {
@@ -390,7 +390,7 @@ export class Tezt extends Block implements ITezt {
     } else {
       const {filepath, lineno} = getLocation(/tezt\.console\.(t|j)s/)
       const relPath = path.relative(process.cwd(), filepath)
-      dir(...args, chalk.dim(`${relPath}:${lineno}`))
+      dir(...args, chalk.dim(`./${relPath}:${lineno}`))
     }
   }
   public async trapRun(fn: (...args) => any, options: ITrapOptions) {
