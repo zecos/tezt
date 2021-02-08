@@ -4,7 +4,8 @@ import path from 'path'
 import { TestStatus } from './Tezt';
 import { ConsoleOutputType } from './tezt.console'
 
-const { log, error } = console
+declare var global: any;
+const { log, error } = global.$$teztRealConsole
 export function outputResults (stats) {
   const { passed, totalRun, failed, skipped } = stats
   outputContent(stats)

@@ -10,7 +10,8 @@ import { RUN } from './msg'
 
 const MAX_WORKERS = 4
 
-const log = console.log
+declare var global:any;
+// const log = global.$$teztRealConsole.log
 
 export const run = async () => {
   const config = await getConfig()
@@ -37,14 +38,14 @@ export const run = async () => {
           try {
             await runTests({workers, config})
           } catch (err) {
-            console.error('There was an error starting the tests.')
+            global.$$teztRealConsole.error('There was an error starting the tests.')
           }
           running = false
         }, 500)
       }
     })
     .on('ready', () => {
-      console.log(chalk.cyan('Watching for changes...'))
+      global.$$teztRealConsole.log(chalk.cyan('Watching for changes...'))
     })
 }
 

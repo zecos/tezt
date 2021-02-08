@@ -1,4 +1,5 @@
-import { ILocation } from './location'
+import { ILocation, getLocation as getLogLocation } from './location'
+import chalk from 'chalk'
 import { platform } from 'os'
 import path from 'path'
 
@@ -36,7 +37,10 @@ export const patchConsole = () => {
       if (instance && (typeof instance[key] === "function")) {
         return instance[key](...args)
       }
-      return originals[key](...args)
+      // const {filepath, lineno} = getLocation(new RegExp(`(Object.console\\.${key}|at console\\.${key})`))
+      const {filepath, lineno} = getLogLocation(/tezt.console.(t|j)s/)
+      const p = path.relative(process.cwd(), filepath)
+      return originals[key](...args, chalk.dim(`./${p}:${lineno}`))
     }
   }
 }
