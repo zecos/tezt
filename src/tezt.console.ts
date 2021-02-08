@@ -6,7 +6,8 @@ import path from 'path'
 export enum ConsoleOutputType {
   Warn,
   Error,
-  Log
+  Log,
+  Dir,
 }
 
 export interface IConsoleOutput {

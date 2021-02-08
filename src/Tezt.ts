@@ -6,7 +6,7 @@ import { ConsoleOutputType, IConsoleOutput } from './tezt.console';
 
 
 const globalAny: any = global
-const {log, error, warn} = console
+const {log, error, warn, dir} = console
 export type TVoidFunc = () => void
 export interface IBlock {
   children: TItem[]
@@ -370,6 +370,17 @@ export class Tezt extends Block implements ITezt {
       })
     } else {
       error(...args)
+    }
+  }
+  public dir = (...args) => {
+    if (this.output) {
+      this.output.push({
+        message: args.map(String),
+        location: getLocation(/tezt\.console\.(t|j)s/),
+        type: ConsoleOutputType.Dir
+      })
+    } else {
+      dir(...args)
     }
   }
   public async trapRun(fn: (...args) => any, options: ITrapOptions) {
