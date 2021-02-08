@@ -3,10 +3,12 @@ import { RunCallbacks, IRunCallbacks } from './RunCallbacks';
 import { getLocation, ILocation } from './location';
 import { promisify } from 'util';
 import { ConsoleOutputType, IConsoleOutput } from './tezt.console';
+import path from 'path'
+import chalk from 'chalk'
 
 
 const globalAny: any = global
-const {log, error, warn, dir} = console
+const {log, error, warn, dir} = globalAny.$$teztRealConsole || console
 export type TVoidFunc = () => void
 export interface IBlock {
   children: TItem[]
@@ -347,7 +349,9 @@ export class Tezt extends Block implements ITezt {
         type: ConsoleOutputType.Log
       })
     } else {
-      log(...args)
+      const {filepath, lineno} = getLocation(/tezt\.console\.(t|j)s/)
+      const relPath = path.relative(process.cwd(), filepath)
+      log(...args, chalk.dim(`${relPath}:${lineno}`))
     }
   }
   public warn = (...args) => {
@@ -358,7 +362,9 @@ export class Tezt extends Block implements ITezt {
         type: ConsoleOutputType.Warn
       })
     } else {
-      warn(...args)
+      const {filepath, lineno} = getLocation(/tezt\.console\.(t|j)s/)
+      const relPath = path.relative(process.cwd(), filepath)
+      warn(...args, chalk.yellow.dim(`${relPath}:${lineno}`))
     }
   }
   public error = (...args) => {
@@ -369,7 +375,9 @@ export class Tezt extends Block implements ITezt {
         type: ConsoleOutputType.Error
       })
     } else {
-      error(...args)
+      const {filepath, lineno} = getLocation(/tezt\.console\.(t|j)s/)
+      const relPath = path.relative(process.cwd(), filepath)
+      error(...args, chalk.red.dim(`${relPath}, ${lineno}`))
     }
   }
   public dir = (...args) => {
@@ -380,7 +388,9 @@ export class Tezt extends Block implements ITezt {
         type: ConsoleOutputType.Dir
       })
     } else {
-      dir(...args)
+      const {filepath, lineno} = getLocation(/tezt\.console\.(t|j)s/)
+      const relPath = path.relative(process.cwd(), filepath)
+      dir(...args, chalk.dim(`${relPath}:${lineno}`))
     }
   }
   public async trapRun(fn: (...args) => any, options: ITrapOptions) {

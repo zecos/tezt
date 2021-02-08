@@ -6,7 +6,7 @@ import { TestStatus } from './Tezt';
 import { ConsoleOutputType } from './tezt.console'
 
 declare var global: any;
-const { log, error, dir } = global.$$teztRealConsole
+const { log, error, dir, warn } = global.$$teztRealConsole
 export function outputResults (stats) {
   const { passed, totalRun, failed, skipped } = stats
   outputContent(stats)
@@ -74,7 +74,7 @@ function logoutputs(outputs, depth) {
     const locationinfo = `  (./${relativepath}:${location.lineno})`
     const formattedOutput = `${indentation}${message.join(" ")}${locationinfo}`
     if (type === ConsoleOutputType.Warn) {
-      log(chalk.yellow.dim(formattedOutput))
+      warn(chalk.yellow.dim(formattedOutput))
     } else if (output.type === ConsoleOutputType.Error) {
       error(chalk.red.dim(formattedOutput))
     } else if (output.type === ConsoleOutputType.Log) {

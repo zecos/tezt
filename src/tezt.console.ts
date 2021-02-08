@@ -124,6 +124,7 @@ export function getLocation(matchLine): ILocation {
     /.*\s\(?\w:([^:]+):(\d+):\d+\)?$/
   const result = regExp.exec(fileLine)
   if (!result) {
+    global.$$teztRealConsole.log(lines)
     return  {
       filepath: 'unknown',
       lineno: 'unkown',

@@ -9,6 +9,7 @@ export class Location implements ILocation {
   constructor(public filepath, public lineno) {}
 }
 
+declare var global: any;
 const { log } = console
 export function getLocation(matchLine): ILocation {
   const {stack} = new Error()
