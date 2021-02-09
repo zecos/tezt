@@ -10,7 +10,7 @@ patchConsole()
 import { outputCompositeResults, outputResults } from './output';
 import path from 'path'
 import fetch from 'node-fetch'
-import { READY, RUN, TERMINATE } from './msg';
+import { PRELOAD, READY, RUN, TERMINATE } from './msg';
 import { ITezt, Tezt } from './Tezt';
 import { reset } from './tezt.singleton'
 const tezts = [...new Array(30)].map(() => new Tezt)
@@ -35,11 +35,20 @@ export const runWorker = () => (new Promise<void>((res, rej) => {
         console.error(err)
         process.exit(1)
       }
+    } else if (msg.type === PRELOAD) {
+      try {
+        await import(msg.data)
+      } catch (err) {
+        global.$$teztRealConsole.error(`There was an error preloading ${msg.data}`)
+        global.$$teztRealConsole.error(err)
+        process.exit(1)
+      }
     }
   })
 }))
 
 export const run = async ({config, testFiles}) => {
+  const startTime = Date.now()
   reset()
   const instances = global.$$teztInstances
   if (config.setup) {
@@ -115,6 +124,7 @@ export const run = async ({config, testFiles}) => {
   if (config.teardown) {
     await import(path.resolve(config.root, config.teardown))
   }
+  log(`Total time: ${Date.now() - startTime}ms`)
 }
 
 

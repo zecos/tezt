@@ -26,6 +26,8 @@ const baseDefault = {
   gracePeriod: 5,
   // run tests in parallel, but track by filename of actual test
   parallel: true,
+  // run file in test process before any tests are run
+  preload: null,
 }
 
 export async function getConfig() {
@@ -85,6 +87,8 @@ async function init(config) {
   timeout: ${config.timeout},
   // default time to wait after test is complete for asynchronous errors
   gracePeriod: ${config.gracePeriod},
+  // run file in test process before any tests are run
+  preload: ${config.preload},
 }`)
 }
 
@@ -109,6 +113,8 @@ async function parseCommandLineArgs() {
       config.fns = true
     } else if (['--init'].includes(arg)) {
       config.init = true
+    } else if (['--preload'].includes(arg)) {
+      config.preload = args[++i]
     } else if (['--test-patterns', '-t'].includes(arg)) {
       while(!args[i+1].startsWith('-')) {
         config.testPatterns = args[++i]

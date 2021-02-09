@@ -17,13 +17,20 @@ export const run = async () => {
   const config = await getConfig()
 
   if (!config.watch) {
-    const workers = genWorkers(1)
+    const workers = genWorkers({
+      numWorkers: 1,
+      preload: config.preload,
+    })
     await runTests({workers, config})
     process.exit()
   }
+
   const numCPUs = os.cpus().length
   const numWorkers = Math.min(numCPUs, MAX_WORKERS)
-  const workers = genWorkers(numWorkers)
+  const workers = genWorkers({
+    numWorkers,
+    preload: config.preload,
+  })
 
   let running = false
   chokidar

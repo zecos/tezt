@@ -1,22 +1,35 @@
 import cluster, {Worker} from 'cluster'
-import { END, READY, TERMINATE } from './msg'
+import { END, PRELOAD, READY, TERMINATE } from './msg'
 
-export function* genWorkers(numWorkers: number) {
+interface IGenWorkers {
+  numWorkers: number
+  preload?: string
+}
+export function* genWorkers({
+    numWorkers,
+    preload,
+  }: IGenWorkers) {
   const workers: Promise<Worker>[] = []
   for (const _ of range(0, numWorkers)) {
-    workers.push(createWorker())
+    workers.push(createWorker(preload))
   }
   let nextWorker = workers.shift()
   while (true) {
     yield nextWorker
     nextWorker = workers.shift()
-    workers.push(createWorker())
+    workers.push(createWorker(preload))
   }
 }
 
-function createWorker(): Promise<Worker> {
+function createWorker(preload?: string): Promise<Worker> {
   return new Promise((res, rej) => {
     const worker = cluster.fork()
+    if (preload) {
+      worker.send({
+        type: PRELOAD,
+        data: preload,
+      })
+    }
     const detectReady = (message) => {
       if (message.type !== READY) {
         console.error('Something went wrong creating the worker')

@@ -255,3 +255,5 @@ to `react-app-env.d.ts`
 * add snapshotting
 * should be able to run global tezt from a parent directory, and it run tezt on all sub directories that have tezt installed
   * note: this will require removing duplicates...so if there's a duplicate
+* console.log(require.cache)
+* preload node_modules - add an option for a file to run before tests have started
