@@ -6,7 +6,11 @@ import path from 'path'
 import { collapseTextChangeRangesAcrossMultipleVersions } from 'typescript';
 const originalPrepareStackTrace = Error.prepareStackTrace
 Error.prepareStackTrace = (...args) => {
-  return originalPrepareStackTrace(...args)
+  try {
+    return originalPrepareStackTrace(...args)
+  } catch (err) {
+    return "Couldn't prepare stack trace"
+  }
 }
 
 const noop = () => {}
