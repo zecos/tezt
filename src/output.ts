@@ -6,7 +6,16 @@ import { TestStatus } from './Tezt';
 import { ConsoleOutputType } from './tezt.console'
 
 declare var global: any;
-const { log, error, dir, warn } = global.$$teztRealConsole
+let log, error, dir, warn;
+if (process.env.NODE_ENV === "test") {
+  const { _log, _error, _dir, _warn } = global.$$teztRealConsole
+  log = _log
+  error = _error
+  dir = _dir
+  warn = _warn
+
+}
+
 export function outputResults (stats) {
   const { passed, totalRun, failed, skipped } = stats
   outputContent(stats)

@@ -3,13 +3,14 @@ import { Tezt } from './Tezt'
 import { outputResults } from './output';
 import { getLocation } from './location';
 import path from 'path'
-import { collapseTextChangeRangesAcrossMultipleVersions } from 'typescript';
-const originalPrepareStackTrace = Error.prepareStackTrace
-Error.prepareStackTrace = (...args) => {
-  try {
-    return originalPrepareStackTrace(...args)
-  } catch (err) {
-    return "Couldn't prepare stack trace"
+if (process.env.NODE_ENV === "test") {
+  const originalPrepareStackTrace = Error.prepareStackTrace
+  Error.prepareStackTrace = (...args) => {
+    try {
+      return originalPrepareStackTrace(...args)
+    } catch (err) {
+      return "Couldn't prepare stack trace"
+    }
   }
 }
 
