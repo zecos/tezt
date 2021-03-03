@@ -244,10 +244,36 @@ declare module '@testing-library/react'
 
 to `react-app-env.d.ts`
 
+### Test Current File in VS Code
+
+Add this to your `launch.json` file (in `.vscode`):
+
+```
+    {
+      "name": "Test Current File",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceRoot}/${relativeFile}",
+      "cwd": "${workspaceRoot}/server",
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register",
+      ],
+      "env": {
+        "FORCE_COLOR": "1",
+        "NODE_ENV": "test",
+      },
+      "skipFiles": [
+          "<node_internals>/**/*.js",
+      ],
+    }
+```
+
 ### Related
 
 [jest](https://jestjs.io)
 [mocha](https://mochajs.org)
+
 
 
 ### TODO
