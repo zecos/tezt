@@ -8,12 +8,13 @@ import { ConsoleOutputType } from './tezt.console'
 declare var global: any;
 let log, error, dir, warn;
 if (process.env.NODE_ENV === "test") {
-  const { _log, _error, _dir, _warn } = global.$$teztRealConsole
+  const { log:_log, error:_error, dir:_dir, warn:_warn } = global.$$teztRealConsole
   log = _log
   error = _error
   dir = _dir
   warn = _warn
-
+} else {
+  console.log('not in test')
 }
 
 export function outputResults (stats) {
